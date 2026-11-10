@@ -1,0 +1,51 @@
+# Builds the game and publishes dist/ to GitHub Pages on every push to main.
+# This file lives in the public Pages repo as .github/workflows/deploy-pages.yml
+# (copied there by scripts/export-pages.mjs).
+#
+# While the repo is private, only the build job runs: it proves the game
+# builds on a clean Linux machine. Once the repo is public and Pages is
+# turned on (Settings > Pages > Source: GitHub Actions), the deploy job runs
+# too.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          NODE_ENV: production
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

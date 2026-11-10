@@ -1,0 +1,89 @@
+<!--
+  Comfort and accessibility settings, beside the table. SettingsPanelSystem
+  wires the button IDs; values persist in localStorage. Poke a button with a
+  fingertip, or point and pinch from a distance.
+-->
+<style>
+  .panel-root {
+    flex-direction: column;
+    width: 400px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    padding-left: 20px;
+    padding-right: 20px;
+    gap: 12px;
+  }
+
+  .title {
+    color: #6b5a00;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+  }
+
+  .title:dark {
+    color: #f5d90a;
+  }
+
+  .row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .label {
+    color: #1c1d20;
+    font-size: 19px;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  .label:dark {
+    color: #fafaf7;
+  }
+
+  .pair {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .btn {
+    width: 104px;
+    justify-content: center;
+  }
+
+  .wide {
+    width: 146px;
+    justify-content: center;
+  }
+</style>
+<Panel class="panel-root">
+  <span class="title">COMFORT</span>
+  <div class="row">
+    <span class="label">Table height</span>
+    <div class="pair">
+      <Button id="height-down" class="btn"><ButtonLabel>Lower</ButtonLabel></Button>
+      <Button id="height-up" class="btn"><ButtonLabel>Higher</ButtonLabel></Button>
+    </div>
+  </div>
+  <div class="row">
+    <span class="label">Distance</span>
+    <div class="pair">
+      <Button id="move-closer" class="btn"><ButtonLabel>Closer</ButtonLabel></Button>
+      <Button id="move-farther" class="btn"><ButtonLabel>Farther</ButtonLabel></Button>
+    </div>
+  </div>
+  <div class="row">
+    <span class="label">High contrast</span>
+    <Button id="contrast-toggle" class="btn"><ButtonLabel id="contrast-label">Off</ButtonLabel></Button>
+  </div>
+  <div class="row">
+    <span class="label">Music</span>
+    <Button id="music-toggle" class="btn"><ButtonLabel id="music-label">On</ButtonLabel></Button>
+  </div>
+  <div class="row">
+    <Button id="restart-board" class="wide"><ButtonLabel>Restart board</ButtonLabel></Button>
+    <Button id="reset-settings" class="wide"><ButtonLabel>Reset</ButtonLabel></Button>
+  </div>
+</Panel>

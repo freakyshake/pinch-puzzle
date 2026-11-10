@@ -1,0 +1,360 @@
+{
+  "version": "iwsdk.scene.v1",
+  "units": "meters",
+  "components": {
+    "com.iwsdk.components.DomeGradient": {
+      "sky": [
+        0.843,
+        0.796,
+        0.882,
+        1
+      ],
+      "equator": [
+        0.808,
+        0.855,
+        0.91,
+        1
+      ],
+      "ground": [
+        0.902,
+        0.855,
+        0.82,
+        1
+      ],
+      "elevationDeg": 24,
+      "azimuthDeg": -31,
+      "dither": true
+    },
+    "com.iwsdk.components.IBLGradient": {
+      "sky": [
+        0.72,
+        0.7,
+        0.8,
+        1
+      ],
+      "equator": [
+        0.78,
+        0.78,
+        0.84,
+        1
+      ],
+      "ground": [
+        0.5,
+        0.52,
+        0.58,
+        1
+      ],
+      "intensity": 0.2025
+    }
+  },
+  "environment": {
+    "toneMapping": "aces",
+    "exposure": 1.2,
+    "shadows": true,
+    "shadowMapType": "pcf"
+  },
+  "resources": {},
+  "nodes": [
+    {
+      "id": "studio-floor",
+      "name": "Studio Floor",
+      "framingRole": "support",
+      "content": {
+        "type": "asset",
+        "asset": "studio-floor",
+        "receiveShadow": true
+      },
+      "components": {
+        "LocomotionEnvironment": {},
+        "DomeFade": {
+          "start": 4,
+          "end": 10
+        }
+      }
+    },
+    {
+      "id": "stage",
+      "name": "Stage",
+      "framingRole": "support",
+      "content": {
+        "type": "asset",
+        "asset": "stage",
+        "castShadow": true,
+        "receiveShadow": true
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          0.1
+        ]
+      }
+    },
+    {
+      "id": "puzzle-table",
+      "name": "Puzzle Table",
+      "content": {
+        "type": "asset",
+        "asset": "puzzle-table",
+        "castShadow": true,
+        "receiveShadow": true
+      },
+      "transform": {
+        "position": [
+          0,
+          0.035,
+          -0.55
+        ]
+      },
+      "children": [
+        {
+          "id": "puzzle-table-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              0,
+              0.002,
+              0
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                1.3,
+                1
+              ],
+              "height": 0.0026
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "progress-panel",
+      "name": "Progress Panel",
+      "content": {
+        "type": "asset",
+        "asset": "progress-panel"
+      },
+      "transform": {
+        "position": [
+          0,
+          1.13,
+          -1.02
+        ],
+        "scale": 0.13
+      },
+      "components": {
+        "RayInteractable": {},
+        "PokeInteractable": {}
+      }
+    },
+    {
+      "id": "settings-panel",
+      "name": "Settings Panel",
+      "content": {
+        "type": "asset",
+        "asset": "settings-panel"
+      },
+      "transform": {
+        "position": [
+          -0.52,
+          0.97,
+          -0.24
+        ],
+        "rotationDeg": [
+          0,
+          52,
+          0
+        ],
+        "scale": 0.085
+      },
+      "components": {
+        "RayInteractable": {},
+        "PokeInteractable": {}
+      }
+    },
+    {
+      "id": "gallery-set",
+      "name": "Gallery Set",
+      "content": {
+        "type": "asset",
+        "asset": "gallery-set",
+        "castShadow": false,
+        "receiveShadow": true
+      },
+      "transform": {
+        "position": [
+          -3.5562,
+          0,
+          -4.0787
+        ],
+        "rotationDeg": [
+          0,
+          35,
+          0
+        ]
+      },
+      "children": [
+        {
+          "id": "gallery-set-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              0,
+              0.002,
+              0
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                1.9,
+                1
+              ]
+            }
+          }
+        },
+        {
+          "id": "gallery-vase-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              -0.95,
+              0.002,
+              -0.15
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                0.55,
+                0.55
+              ],
+              "height": 0.0011
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "sideboard-set",
+      "name": "Sideboard Set",
+      "content": {
+        "type": "asset",
+        "asset": "sideboard-set",
+        "castShadow": false,
+        "receiveShadow": true
+      },
+      "transform": {
+        "position": [
+          3.6709,
+          0,
+          -4.2426
+        ],
+        "rotationDeg": [
+          0,
+          -35,
+          0
+        ]
+      },
+      "children": [
+        {
+          "id": "sideboard-set-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              0,
+              0.002,
+              0
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                2.3,
+                0.9
+              ]
+            }
+          }
+        },
+        {
+          "id": "floor-lamp-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              1.1,
+              0.002,
+              -0.08
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                0.45,
+                0.45
+              ],
+              "height": 0.0009
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "key-light",
+      "name": "Key Light",
+      "transform": {
+        "position": [
+          -2.3541,
+          11.2763,
+          1.762
+        ],
+        "rotationDeg": [
+          -73.3982,
+          -11.3134,
+          0
+        ]
+      },
+      "components": {
+        "DirectionalLight": {
+          "color": [
+            1,
+            0.945,
+            0.87,
+            1
+          ],
+          "intensity": 2.3,
+          "castShadow": true,
+          "shadowMapSize": "2048",
+          "shadowCameraSize": 8,
+          "shadowCameraNear": 2,
+          "shadowCameraFar": 24,
+          "shadowRadius": 7,
+          "shadowBias": -0.0004,
+          "shadowNormalBias": 0.02
+        }
+      }
+    },
+    {
+      "id": "fill-light",
+      "name": "Fill Light",
+      "components": {
+        "HemisphereLight": {
+          "skyColor": [
+            0.78,
+            0.83,
+            0.96,
+            1
+          ],
+          "groundColor": [
+            0.592,
+            0.608,
+            0.651,
+            1
+          ],
+          "intensity": 1.15
+        }
+      }
+    }
+  ]
+}

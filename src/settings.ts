@@ -1,0 +1,85 @@
+/**
+ * Player settings (accessibility and comfort), persisted in localStorage.
+ * Plain module state with change listeners; no ECS, DOM or renderer imports
+ * beyond localStorage, which is wrapped so private windows still work.
+ */
+
+export interface Settings {
+  /** Table height offset in meters (negative is lower). */
+  height: number;
+  /** Table distance offset in meters (positive is closer to the player). */
+  closer: number;
+  highContrast: boolean;
+  music: boolean;
+}
+
+export const HEIGHT_STEP = 0.04;
+export const HEIGHT_MIN = -0.16;
+export const HEIGHT_MAX = 0.16;
+export const CLOSER_STEP = 0.05;
+export const CLOSER_MIN = -0.1;
+export const CLOSER_MAX = 0.2;
+
+const KEY = 'pinch-puzzle.settings.v1';
+const DEFAULTS: Settings = {
+  height: 0,
+  closer: 0,
+  highContrast: false,
+  music: true,
+};
+
+type Listener = (next: Settings, prev: Settings) => void;
+
+const listeners = new Set<Listener>();
+let current: Settings = load();
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, Math.round(v * 1000) / 1000));
+}
+
+function load(): Settings {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw == null) return { ...DEFAULTS };
+    const parsed = JSON.parse(raw) as Partial<Settings>;
+    return {
+      height: clamp(Number(parsed.height) || 0, HEIGHT_MIN, HEIGHT_MAX),
+      closer: clamp(Number(parsed.closer) || 0, CLOSER_MIN, CLOSER_MAX),
+      highContrast: parsed.highContrast === true,
+      music: parsed.music !== false,
+    };
+  } catch {
+    return { ...DEFAULTS };
+  }
+}
+
+export function getSettings(): Readonly<Settings> {
+  return current;
+}
+
+export function updateSettings(patch: Partial<Settings>): void {
+  const prev = current;
+  const next: Settings = {
+    ...prev,
+    ...patch,
+  };
+  next.height = clamp(next.height, HEIGHT_MIN, HEIGHT_MAX);
+  next.closer = clamp(next.closer, CLOSER_MIN, CLOSER_MAX);
+  current = next;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(next));
+  } catch {
+    // Storage unavailable (private window, blocked site data): keep in memory.
+  }
+  for (const listener of listeners) listener(next, prev);
+}
+
+export function resetSettings(): void {
+  updateSettings({ ...DEFAULTS });
+}
+
+/** Subscribe to changes; returns an unsubscribe function for cleanupFuncs. */
+export function onSettingsChange(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
