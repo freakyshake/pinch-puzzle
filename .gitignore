@@ -198,6 +198,8 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
+.vercel
+
 # ---- Private and agent-only files: never in the public repo ----
 CLAUDE.md
 BRIEF.md

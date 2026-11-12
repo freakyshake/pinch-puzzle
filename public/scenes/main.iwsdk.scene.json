@@ -325,7 +325,7 @@
           ],
           "intensity": 2.3,
           "castShadow": true,
-          "shadowMapSize": "2048",
+          "shadowMapSize": "1024",
           "shadowCameraSize": 8,
           "shadowCameraNear": 2,
           "shadowCameraFar": 24,

@@ -20,9 +20,20 @@ import { createPieceVisual, createPlayMat, createSlotVisual } from './shapes.js'
 import { Sounds } from './sounds.js';
 
 /** Release within this horizontal distance of a matching slot snaps the piece. */
-const SNAP_RADIUS = 0.1;
+const SNAP_RADIUS = 0.12;
 /** ...and within this vertical distance of the slot. */
-const SNAP_HEIGHT = 0.2;
+const SNAP_HEIGHT = 0.22;
+/**
+ * Opening a pinch is not instant: tracked fingers drift for a few frames
+ * before the release registers, dragging the piece off its slot. A release
+ * also counts if the piece was over the slot at any point in this many
+ * seconds before letting go.
+ */
+const RELEASE_GRACE = 0.18;
+/** Recent held positions kept per piece (about 0.25 s at 72 to 90 fps). */
+const TRAIL_SAMPLES = 24;
+const TRAIL = 'trail';
+const TRAIL_HEAD = 'trailHead';
 /** Glide speed for snap and return (higher is faster). */
 const GLIDE_RATE = 12;
 /** Seconds the win celebration plays before the next board appears. */
@@ -104,7 +115,12 @@ export class PuzzleSystem extends createSystem({
   };
 
   private piecePos = new Vector3();
+  private samplePos = new Vector3();
   private snapPos = new Vector3();
+  private now = 0;
+  private foundSlot: Entity | null = null;
+  private foundDist = 0;
+  private foundWrong: Entity | null = null;
   private demoFrom = new Vector3();
   private demoTo = new Vector3();
   private identity = new Quaternion();
@@ -130,6 +146,9 @@ export class PuzzleSystem extends createSystem({
     this.cleanupFuncs.push(
       this.queries.held.subscribe('qualify', (entity) => {
         entity.setValue(Piece, 'state', PieceStates.Held);
+        // Forget positions from any earlier grab.
+        const trail = entity.object3D!.userData[TRAIL] as Float32Array;
+        for (let i = 3; i < trail.length; i += 4) trail[i] = -1;
         entity.object3D!.getWorldPosition(this.piecePos);
         this.sounds.pick(this.piecePos);
         this.idle = 0;
@@ -202,6 +221,9 @@ export class PuzzleSystem extends createSystem({
       const pieceVisual = createPieceVisual(def.shape);
       pieceVisual.root.userData[PIECE_MAT] = pieceVisual.material;
       pieceVisual.root.userData[PIECE_OUTLINE] = pieceVisual.outline;
+      // x, y, z, time per sample; time -1 marks an empty sample.
+      pieceVisual.root.userData[TRAIL] = new Float32Array(TRAIL_SAMPLES * 4).fill(-1);
+      pieceVisual.root.userData[TRAIL_HEAD] = 0;
       pieceVisual.root.name = `piece-${def.shape}${suffix}`;
       const piece = this.world.createTransformEntity(pieceVisual.root);
       const hx = ox + def.tray[0];
@@ -238,29 +260,66 @@ export class PuzzleSystem extends createSystem({
     for (const entity of doomed) entity.dispose();
   }
 
+  /**
+   * Nearest free slot of `shape` within snap range of `pos`, into foundSlot
+   * and foundDist. A free slot of another shape in range goes to foundWrong.
+   */
+  private findSlot(pos: Vector3, shape: string): void {
+    for (const slot of this.queries.slots.entities) {
+      const sp = slot.object3D!.position;
+      const dist = Math.hypot(sp.x - pos.x, sp.z - pos.z);
+      if (dist > SNAP_RADIUS) continue;
+      if (Math.abs(pos.y - sp.y) > SNAP_HEIGHT) continue;
+      if (slot.getValue(Slot, 'occupant') != null) continue;
+      if (slot.getValue(Slot, 'shape') !== shape) {
+        this.foundWrong = slot;
+        continue;
+      }
+      if (dist < this.foundDist) {
+        this.foundSlot = slot;
+        this.foundDist = dist;
+      }
+    }
+  }
+
+  /** Records where each held piece is, for the release grace window. */
+  private recordTrails(): void {
+    for (const piece of this.queries.held.entities) {
+      const object = piece.object3D!;
+      const data = object.userData;
+      const trail = data[TRAIL] as Float32Array;
+      const head = data[TRAIL_HEAD] as number;
+      object.getWorldPosition(this.samplePos);
+      const i = head * 4;
+      trail[i] = this.samplePos.x;
+      trail[i + 1] = this.samplePos.y;
+      trail[i + 2] = this.samplePos.z;
+      trail[i + 3] = this.now;
+      data[TRAIL_HEAD] = (head + 1) % TRAIL_SAMPLES;
+    }
+  }
+
   private onRelease(piece: Entity): void {
     const object = piece.object3D!;
     object.getWorldPosition(this.piecePos);
-    const shape = piece.getValue(Piece, 'shape');
+    const shape = piece.getValue(Piece, 'shape') as string;
 
-    let best: Entity | null = null;
-    let bestDist = SNAP_RADIUS;
-    let wrongNear: Entity | null = null;
-    for (const slot of this.queries.slots.entities) {
-      const sp = slot.object3D!.position;
-      const dist = Math.hypot(sp.x - this.piecePos.x, sp.z - this.piecePos.z);
-      if (dist > SNAP_RADIUS) continue;
-      if (Math.abs(this.piecePos.y - sp.y) > SNAP_HEIGHT) continue;
-      if (slot.getValue(Slot, 'occupant') != null) continue;
-      if (slot.getValue(Slot, 'shape') !== shape) {
-        wrongNear = slot;
-        continue;
-      }
-      if (dist < bestDist) {
-        best = slot;
-        bestDist = dist;
+    this.foundSlot = null;
+    this.foundDist = SNAP_RADIUS;
+    this.foundWrong = null;
+    this.findSlot(this.piecePos, shape);
+    // A wrong-shape signal only counts where the piece was actually let go.
+    const wrongNear = this.foundWrong as Entity | null;
+    if (!this.foundSlot) {
+      const trail = object.userData[TRAIL] as Float32Array;
+      for (let i = 0; i < trail.length; i += 4) {
+        const t = trail[i + 3];
+        if (t < 0 || this.now - t > RELEASE_GRACE) continue;
+        this.samplePos.set(trail[i], trail[i + 1], trail[i + 2]);
+        this.findSlot(this.samplePos, shape);
       }
     }
+    const best = this.foundSlot as Entity | null;
 
     const target = piece.getVectorView(Piece, 'target');
     if (best) {
@@ -364,6 +423,8 @@ export class PuzzleSystem extends createSystem({
   update(delta: number, time: number): void {
     const k = 1 - Math.exp(-GLIDE_RATE * delta);
     let justPlaced = false;
+    this.now = time;
+    this.recordTrails();
 
     for (const shape in this.heldShapes) this.heldShapes[shape as ShapeKind] = false;
     for (const piece of this.queries.held.entities) {

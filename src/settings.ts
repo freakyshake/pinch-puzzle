@@ -14,7 +14,7 @@ export interface Settings {
 }
 
 export const HEIGHT_STEP = 0.04;
-export const HEIGHT_MIN = -0.16;
+export const HEIGHT_MIN = -0.2;
 export const HEIGHT_MAX = 0.16;
 export const CLOSER_STEP = 0.05;
 export const CLOSER_MIN = -0.1;
@@ -22,7 +22,7 @@ export const CLOSER_MAX = 0.2;
 
 const KEY = 'pinch-puzzle.settings.v1';
 const DEFAULTS: Settings = {
-  height: 0,
+  height: -0.08,
   closer: 0,
   highContrast: false,
   music: true,
@@ -37,14 +37,19 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, Math.round(v * 1000) / 1000));
 }
 
+function finiteOr(v: unknown, fallback: number): number {
+  const n = Number(v);
+  return v != null && Number.isFinite(n) ? n : fallback;
+}
+
 function load(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw == null) return { ...DEFAULTS };
     const parsed = JSON.parse(raw) as Partial<Settings>;
     return {
-      height: clamp(Number(parsed.height) || 0, HEIGHT_MIN, HEIGHT_MAX),
-      closer: clamp(Number(parsed.closer) || 0, CLOSER_MIN, CLOSER_MAX),
+      height: clamp(finiteOr(parsed.height, DEFAULTS.height), HEIGHT_MIN, HEIGHT_MAX),
+      closer: clamp(finiteOr(parsed.closer, DEFAULTS.closer), CLOSER_MIN, CLOSER_MAX),
       highContrast: parsed.highContrast === true,
       music: parsed.music !== false,
     };
