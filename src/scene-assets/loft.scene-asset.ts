@@ -41,10 +41,11 @@ export const LOFT = {
   front: 3.5,
   height: 4.4,
   wall: 0.14,
-  /** Roll-up door opening in the back wall. */
+  /** Big steel-framed window in the back wall, looking west at a sunset. */
   doorLeft: -4.3,
   doorRight: -1.5,
   doorTop: 3.3,
+  sill: 0.85,
 };
 
 /** The six piece colors, in board order. */
@@ -288,6 +289,69 @@ function duskTexture(): DataTexture {
   return pixelTexture(8, 64, pixels);
 }
 
+/**
+ * The view from the window: a sunset over layered hills and a lake. Sky from
+ * deep indigo through rose to gold, the sun low with a wide glow, thin lit
+ * cloud streaks, two hill ranges in purple haze, and the sun's path on the
+ * water. Painted once; v = 0 is the top.
+ */
+function sunsetTexture(width = 1024, height = 512): DataTexture {
+  const cloud = valueNoise(61, 12);
+  const cloudFine = valueNoise(67, 48);
+  const ridgeFar = valueNoise(71, 7);
+  const ridgeNear = valueNoise(73, 11);
+  const ripple = valueNoise(79, 64);
+  // From the seat the window shows about u 0.36 to 0.62 and v 0.17 to 0.8,
+  // so the sun and the hills sit inside that frame.
+  const sunU = 0.5;
+  const sunV = 0.47;
+  const horizon = 0.58;
+  const mix = (a: number[], b: number[], t: number) => a.map((x, i) => x + (b[i] - x) * Math.min(1, Math.max(0, t)));
+  const sky = (v: number) => {
+    const stops = [[0, [34, 30, 78]], [0.2, [96, 54, 112]], [0.36, [206, 96, 112]], [0.48, [250, 152, 84]], [0.58, [255, 206, 128]]] as const;
+    for (let i = 1; i < stops.length; i += 1) {
+      if (v <= stops[i][0]) return mix([...stops[i - 1][1]], [...stops[i][1]], (v - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]));
+    }
+    return [...stops[stops.length - 1][1]];
+  };
+  const pixels = paintImage(width, height, (u, v) => {
+    const aspect = width / height;
+    const dx = (u - sunU) * aspect;
+    const glowDist = Math.hypot(dx, (v - sunV) * 1.4);
+    // Ridges: far hills sit on the horizon, near hills lower and darker.
+    const farTop = horizon - 0.035 - 0.07 * ridgeFar(u, 0.3);
+    const nearTop = horizon + 0.02 - 0.09 * ridgeNear(u, 0.6) + 0.12 * Math.max(0, u - 0.62);
+    if (v > nearTop && (u > 0.6 || u < 0.2 || v > horizon + 0.12)) {
+      const k = 1 - (v - nearTop) * 0.8;
+      return [52 * k, 34 * k, 62 * k];
+    }
+    if (v > horizon) {
+      // Water: a darker mirror of the sky with the sun's path in it.
+      const mirror = sky(horizon - (v - horizon) * 1.6);
+      const path = Math.exp(-Math.abs(dx) * 18) * (0.55 + 0.45 * ripple(u * 4, v * 2)) * (1 - (v - horizon) * 2);
+      const c = mix(mix(mirror, [70, 44, 90], 0.45), [255, 214, 150], path);
+      return [c[0], c[1], c[2]];
+    }
+    if (v > farTop) {
+      const haze = 1 - (v - farTop) / 0.12;
+      const c = mix([118, 72, 116], sky(v), 0.35 * haze);
+      return [c[0], c[1], c[2]];
+    }
+    let c = sky(v);
+    // Sun and its glow.
+    const disc = glowDist < 0.05 ? 1 : 0;
+    const glow = Math.exp(-glowDist * 5) * 0.7;
+    c = mix(c, [255, 236, 190], Math.max(disc, glow));
+    // Thin cloud streaks, lit from below by the sun.
+    const band = cloud(u * 1.5, v * 0.6) * 0.7 + cloudFine(u * 3, v * 1.2) * 0.3;
+    const streak = Math.max(0, band - 0.5) * 3.2 * Math.max(0, 1 - Math.abs(v - 0.32) * 3.5);
+    const lit = mix([150, 70, 110], [255, 170, 130], 1 - glowDist * 1.6);
+    c = mix(c, lit, Math.min(0.85, streak));
+    return [c[0], c[1], c[2]];
+  });
+  return pixelTexture(width, height, pixels);
+}
+
 /** One tile of light wooden boards, for the shuffleboard top. */
 function boardTexture(size = 256): DataTexture {
   const random = makeRandom(41);
@@ -343,14 +407,10 @@ const deckMat = solid('loft-deck', '#55585E', 0.9);
 const steel = solid('loft-steel', '#25272B', 0.5, 0.4);
 const steelLight = solid('loft-steel-light', '#8E9297', 0.45, 0.5);
 const jamb = solid('loft-jamb', '#3C3F45', 0.7);
-const bollard = solid('loft-bollard', '#E3B21E', 0.5);
 const doorPaint = solid('loft-door', '#C7C1B6', 0.6);
 const ledMat = lamp('#FFF1DC');
-const asphalt = solid('loft-asphalt', '#24252A', 1);
-const buildingMat = solid('loft-building', '#353844', 0.95);
-const windowGlow = lamp('#FFC37A');
-const streetGlow = lamp('#FFD9A0');
 const duskMat = new MeshBasicMaterial({ map: duskTexture() });
+const sunsetMat = new MeshBasicMaterial({ map: sunsetTexture() });
 const sconceGlow = pool('#FFB45E', 0.7);
 const sconceMetal = solid('loft-sconce', '#2A2A2C', 0.4, 0.6);
 const bulb = lamp('#FFE2B0');
@@ -433,7 +493,7 @@ function sconce(x: number, y: number, z: number, rotY: number): Group {
  * side door, and the street outside at dusk.
  */
 export function createLoftShell(): Group {
-  const { halfWidth: W, back: B, front: F, height: H, wall: T, doorLeft: DL, doorRight: DR, doorTop: DT } = LOFT;
+  const { halfWidth: W, back: B, front: F, height: H, wall: T, doorLeft: DL, doorRight: DR, doorTop: DT, sill: S } = LOFT;
   const depth = F - B;
   const midZ = (F + B) / 2;
   const room = new Group();
@@ -459,23 +519,34 @@ export function createLoftShell(): Group {
     wallPiece(DL + W, H, (DL - W) / 2, H / 2, B, 0),
     wallPiece(W - DR, H, (W + DR) / 2, H / 2, B, 0),
     wallPiece(DR - DL, H - DT, (DL + DR) / 2, (H + DT) / 2, B, 0),
+    wallPiece(DR - DL, S, (DL + DR) / 2, S / 2, B, 0),
   );
   // Pilasters along the side walls, slightly proud of the panels.
   for (const z of [-5, -2, 1]) {
     room.add(box([0.12, H, 0.42], wallMat, -W + 0.06, H / 2, z), box([0.12, H, 0.42], wallMat, W - 0.06, H / 2, z));
   }
 
-  // Roll-up door: dark jambs, the rolled door in a housing, yellow bollards.
-  const doorMid = (DL + DR) / 2;
+  // Window: a black steel frame with a 3 x 3 grid of panes, a deep sill,
+  // and the evening light it throws across the floor.
+  const winMid = (DL + DR) / 2;
+  const winW = DR - DL;
+  const winH = DT - S;
+  const winY = (DT + S) / 2;
+  const bar = 0.05;
   room.add(
-    box([0.16, DT, T + 0.08], jamb, DL - 0.08, DT / 2, B),
-    box([0.16, DT, T + 0.08], jamb, DR + 0.08, DT / 2, B),
-    box([DR - DL + 0.32, 0.12, T + 0.1], jamb, doorMid, DT + 0.06, B),
-    box([DR - DL + 0.2, 0.5, 0.5], steelLight, doorMid, DT + 0.36, B + 0.3),
-    cylinder(0.08, 1.1, bollard, DL - 0.32, 0.55, B + 0.4),
-    cylinder(0.08, 1.1, bollard, DR + 0.32, 0.55, B + 0.4),
+    box([0.1, winH + 0.1, T + 0.06], frameBlack, DL - 0.05, winY, B),
+    box([0.1, winH + 0.1, T + 0.06], frameBlack, DR + 0.05, winY, B),
+    box([winW + 0.2, 0.1, T + 0.06], frameBlack, winMid, DT + 0.05, B),
+    box([winW + 0.36, 0.05, 0.32], woodMid, winMid, S - 0.025, B + 0.1),
   );
-  for (let i = 0; i < 4; i += 1) room.add(box([DR - DL, 0.06, 0.02], doorPaint, doorMid, DT - 0.05 - i * 0.075, B - 0.02));
+  for (let i = 1; i < 3; i += 1) {
+    room.add(box([bar, winH, bar], frameBlack, DL + (winW * i) / 3, winY, B));
+    room.add(box([winW, bar, bar], frameBlack, winMid, S + (winH * i) / 3, B));
+  }
+  const sunlight = plane(winW * 1.25, 3.4, pool('#FF9A55', 0.32), winMid + 0.3, 0.007, B + 2.2);
+  sunlight.rotation.x = -Math.PI / 2;
+  sunlight.rotation.z = -0.25;
+  room.add(sunlight);
 
   // Steel side door with a narrow glass panel, and its frame.
   room.add(
@@ -517,22 +588,9 @@ export function createLoftShell(): Group {
   room.children[room.children.length - 1].rotation.z = Math.PI / 2;
   room.add(box([0.72, 0.92, 0.04], frameBlack, 0.45, 2.15, B + 0.02), plane(0.62, 0.82, shirtMat, 0.45, 2.15, B + 0.045));
 
-  // Outside the roll-up door: an evening street. The sky is the scene's
-  // DomeGradient; this adds asphalt, a low building and two street lamps.
-  const street = plane(60, 40, asphalt, -4, -0.004, B - 20.2);
-  street.rotation.x = -Math.PI / 2;
-  room.add(street, box([40, 3.2, 6], buildingMat, -14, 1.6, -46));
-  for (let i = 0; i < 12; i += 1) {
-    room.add(plane(1.4, 0.5, windowGlow, -31 + i * 3.1, i % 3 === 0 ? 1.2 : 2.2, -42.99));
-  }
-  for (const [x, z] of [[-7.5, -13], [-12, -17]] as const) {
-    room.add(cylinder(0.06, 4.2, steel, x, 2.1, z, 8), box([0.6, 0.08, 0.12], steel, x + 0.28, 4.2, z));
-    const head = box([0.32, 0.06, 0.14], streetGlow, x + 0.5, 4.14, z);
-    room.add(head);
-    const spill = plane(4, 4, pool('#FFB86A', 0.35), x + 0.5, 0.01, z);
-    spill.rotation.x = -Math.PI / 2;
-    room.add(spill);
-  }
+  // Outside: a painted sunset far beyond the window. One unlit picture, big
+  // enough to fill the window from anywhere in the room.
+  room.add(plane(30, 12, sunsetMat, -8, 3, B - 12));
 
   return mergeByMaterial(room);
 }
