@@ -134,7 +134,7 @@ function concreteTexture(size = 512): DataTexture {
     const jv = Math.min(v % 0.5, 0.5 - (v % 0.5)) * size;
     const joint = Math.max(0, 1 - Math.min(ju, jv) / 1.3) * 0.45;
     const k = shade * (1 - joint);
-    return [146 * k, 136 * k, 124 * k];
+    return [88 * k, 80 * k, 72 * k];
   });
   return pixelTexture(size, size, pixels, true);
 }
