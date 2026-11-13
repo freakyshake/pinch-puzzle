@@ -4,24 +4,24 @@
   "components": {
     "com.iwsdk.components.DomeGradient": {
       "sky": [
-        0.81,
-        0.76,
-        0.91,
+        0.16,
+        0.18,
+        0.4,
         1
       ],
       "equator": [
-        0.77,
-        0.85,
-        0.94,
+        0.98,
+        0.58,
+        0.4,
         1
       ],
       "ground": [
-        0.95,
-        0.85,
-        0.78,
+        0.1,
+        0.09,
+        0.11,
         1
       ],
-      "elevationDeg": 24,
+      "elevationDeg": 8,
       "azimuthDeg": -31,
       "dither": true
     }
@@ -35,32 +35,8 @@
   "resources": {},
   "nodes": [
     {
-      "id": "studio-floor",
-      "name": "Ground Outside",
-      "framingRole": "support",
-      "content": {
-        "type": "asset",
-        "asset": "studio-floor",
-        "receiveShadow": true
-      },
-      "components": {
-        "LocomotionEnvironment": {},
-        "DomeFade": {
-          "start": 4,
-          "end": 10
-        }
-      },
-      "transform": {
-        "position": [
-          0,
-          -0.06,
-          0
-        ]
-      }
-    },
-    {
       "id": "room",
-      "name": "Room",
+      "name": "Loft",
       "framingRole": "support",
       "content": {
         "type": "asset",
@@ -172,149 +148,6 @@
       }
     },
     {
-      "id": "gallery-set",
-      "name": "Gallery Set",
-      "content": {
-        "type": "asset",
-        "asset": "gallery-set",
-        "castShadow": false,
-        "receiveShadow": true
-      },
-      "transform": {
-        "position": [
-          -2.75,
-          0,
-          -4.3
-        ],
-        "rotationDeg": [
-          0,
-          10,
-          0
-        ]
-      },
-      "children": [
-        {
-          "id": "gallery-set-contact",
-          "name": "Contact Shadow",
-          "transform": {
-            "position": [
-              0,
-              0.002,
-              0
-            ]
-          },
-          "components": {
-            "ContactShadow": {
-              "size": [
-                1.9,
-                1
-              ]
-            }
-          }
-        },
-        {
-          "id": "gallery-vase-contact",
-          "name": "Contact Shadow",
-          "transform": {
-            "position": [
-              -0.95,
-              0.002,
-              -0.15
-            ]
-          },
-          "components": {
-            "ContactShadow": {
-              "size": [
-                0.55,
-                0.55
-              ],
-              "height": 0.0011
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "sideboard-set",
-      "name": "Sideboard Set",
-      "content": {
-        "type": "asset",
-        "asset": "sideboard-set",
-        "castShadow": false,
-        "receiveShadow": true
-      },
-      "transform": {
-        "position": [
-          2.55,
-          0,
-          -4.52
-        ],
-        "rotationDeg": [
-          0,
-          0,
-          0
-        ]
-      },
-      "children": [
-        {
-          "id": "sideboard-set-contact",
-          "name": "Contact Shadow",
-          "transform": {
-            "position": [
-              0,
-              0.002,
-              0
-            ]
-          },
-          "components": {
-            "ContactShadow": {
-              "size": [
-                2.3,
-                0.9
-              ]
-            }
-          }
-        },
-        {
-          "id": "floor-lamp-contact",
-          "name": "Contact Shadow",
-          "transform": {
-            "position": [
-              1.1,
-              0.002,
-              -0.08
-            ]
-          },
-          "components": {
-            "ContactShadow": {
-              "size": [
-                0.45,
-                0.45
-              ],
-              "height": 0.0009
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": "wall-art",
-      "name": "Wall Art",
-      "content": {
-        "type": "asset",
-        "asset": "wall-art",
-        "castShadow": false,
-        "receiveShadow": true
-      },
-      "transform": {
-        "position": [
-          -2.75,
-          1.95,
-          -4.996
-        ]
-      }
-    },
-    {
       "id": "trophy-shelf",
       "name": "Trophy Shelf",
       "content": {
@@ -325,9 +158,14 @@
       },
       "transform": {
         "position": [
-          2.55,
+          4.998,
           1.62,
-          -4.998
+          -1.8
+        ],
+        "rotationDeg": [
+          0,
+          -90,
+          0
         ]
       }
     },
@@ -342,9 +180,9 @@
       },
       "transform": {
         "position": [
-          -3.55,
+          -4.5,
           0,
-          -1.7
+          -5.95
         ]
       },
       "children": [
@@ -380,16 +218,16 @@
       },
       "transform": {
         "position": [
-          3.6,
+          0.05,
           0,
-          -2.4
+          -6.05
         ],
         "rotationDeg": [
           0,
           70,
           0
         ],
-        "scale": 0.88
+        "scale": 0.85
       },
       "children": [
         {
@@ -407,6 +245,206 @@
               "size": [
                 0.6,
                 0.6
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "lounge",
+      "name": "Lounge",
+      "content": {
+        "type": "asset",
+        "asset": "lounge",
+        "castShadow": false,
+        "receiveShadow": true
+      },
+      "children": [
+        {
+          "id": "lounge-sofa-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              2.5,
+              0.004,
+              -2.95
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                3,
+                1.25
+              ]
+            }
+          }
+        },
+        {
+          "id": "lounge-side-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              4.45,
+              0.004,
+              -4.35
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                1.25,
+                3
+              ]
+            }
+          }
+        },
+        {
+          "id": "lounge-recliner-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              0.85,
+              0.004,
+              -4.55
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                1.1,
+                1.1
+              ]
+            }
+          }
+        },
+        {
+          "id": "lounge-table-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              2.55,
+              0.004,
+              -4.4
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                1.45,
+                0.85
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "media-wall",
+      "name": "Media Wall",
+      "content": {
+        "type": "asset",
+        "asset": "media-wall",
+        "castShadow": false,
+        "receiveShadow": true
+      },
+      "children": [
+        {
+          "id": "media-console-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              2.6,
+              0.004,
+              -6.25
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                2.8,
+                0.6
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bar",
+      "name": "Bar",
+      "content": {
+        "type": "asset",
+        "asset": "bar",
+        "castShadow": false,
+        "receiveShadow": true
+      },
+      "children": [
+        {
+          "id": "bar-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              4.73,
+              0.004,
+              -1.8
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                0.65,
+                2.05
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "game-tables",
+      "name": "Game Tables",
+      "content": {
+        "type": "asset",
+        "asset": "game-tables",
+        "castShadow": false,
+        "receiveShadow": true
+      },
+      "children": [
+        {
+          "id": "foosball-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              -2.5,
+              0.004,
+              -2.4
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                1.6,
+                0.95
+              ]
+            }
+          }
+        },
+        {
+          "id": "shuffleboard-contact",
+          "name": "Contact Shadow",
+          "transform": {
+            "position": [
+              3.55,
+              0.004,
+              -0.1
+            ]
+          },
+          "components": {
+            "ContactShadow": {
+              "size": [
+                0.8,
+                3.8
               ]
             }
           }
@@ -432,11 +470,11 @@
         "DirectionalLight": {
           "color": [
             1,
-            0.945,
-            0.87,
+            0.9,
+            0.78,
             1
           ],
-          "intensity": 2.3,
+          "intensity": 2.1,
           "castShadow": true,
           "shadowMapSize": "1024",
           "shadowCameraSize": 8,
@@ -454,18 +492,18 @@
       "components": {
         "HemisphereLight": {
           "skyColor": [
-            0.78,
-            0.83,
-            0.96,
+            1,
+            0.88,
+            0.76,
             1
           ],
           "groundColor": [
-            0.592,
-            0.608,
-            0.651,
+            0.45,
+            0.38,
+            0.34,
             1
           ],
-          "intensity": 1.75
+          "intensity": 1.6
         }
       }
     }

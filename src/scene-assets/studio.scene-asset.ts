@@ -41,11 +41,11 @@ const clayMaterial = createSceneMaterial({
   roughness: 0.9,
 });
 
-// The round stage under the table: a soft apricot, so the room is not all white.
+// The round stage under the table reads as a dark woven rug in the loft.
 const stageMaterial = createSceneMaterial({
   id: 'studio-stage',
   model: 'standard',
-  baseColor: '#F2CDB5',
+  baseColor: '#474C57',
   roughness: 0.9,
 });
 

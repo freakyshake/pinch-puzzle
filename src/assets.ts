@@ -8,15 +8,13 @@
 import { AssetType, defineAssets } from '@iwsdk/core';
 import { createGhostHand } from './scene-assets/ghost-hand.scene-asset.js';
 import {
-  createGallerySet,
-  createSideboardSet,
-} from './scene-assets/decor.scene-asset.js';
-import {
-  createPlant,
-  createRoomShell,
-  createTrophyShelf,
-  createWallArt,
-} from './scene-assets/room.scene-asset.js';
+  createBar,
+  createGameTables,
+  createLoftShell,
+  createLounge,
+  createMediaWall,
+} from './scene-assets/loft.scene-asset.js';
+import { createPlant, createTrophyShelf } from './scene-assets/room.scene-asset.js';
 import {
   createGraphiteCube,
   createGraphiteGem,
@@ -24,7 +22,6 @@ import {
   createGraphiteRing,
   createPlinth,
   createStage,
-  createStudioFloor,
 } from './scene-assets/studio.scene-asset.js';
 
 const publicAssetUrl = (filePath: string): string =>
@@ -48,7 +45,6 @@ const uikitml = (fileName: string, name: string) => ({
 });
 
 export default defineAssets({
-  'studio-floor': createStudioFloor(),
   stage: createStage(),
   plinth: createPlinth(),
   // Seated table: 0.74 m tall, 1.1 m wide; see TABLE in src/levels.ts.
@@ -57,12 +53,14 @@ export default defineAssets({
   'graphite-gem': createGraphiteGem(),
   'graphite-knot': createGraphiteKnot(),
   'graphite-ring': createGraphiteRing(),
-  room: createRoomShell(),
-  'wall-art': createWallArt(),
+  // The game room, an industrial loft at dusk; see loft.scene-asset.ts.
+  room: createLoftShell(),
+  lounge: createLounge(),
+  'media-wall': createMediaWall(),
+  bar: createBar(),
+  'game-tables': createGameTables(),
   plant: createPlant(),
   'trophy-shelf': createTrophyShelf(),
-  'gallery-set': createGallerySet(),
-  'sideboard-set': createSideboardSet(),
   // Onboarding demo hand; spawned at runtime by PuzzleSystem, listed here so
   // it can be previewed in isolation.
   'ghost-hand': createGhostHand(),
