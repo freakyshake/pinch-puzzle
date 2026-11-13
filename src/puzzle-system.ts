@@ -36,6 +36,8 @@ const TRAIL = 'trail';
 const TRAIL_HEAD = 'trailHead';
 /** Glide speed for snap and return (higher is faster). */
 const GLIDE_RATE = 12;
+/** How fast the table glides to a new height or distance. */
+const TABLE_GLIDE_RATE = 7;
 /** Seconds the win celebration plays before the next board appears. */
 const WIN_DURATION = 3.2;
 /** Seconds without progress before the ghost hand offers help again. */
@@ -100,6 +102,8 @@ export class PuzzleSystem extends createSystem({
 
   /** Applied table offset: y = height, z = toward the player. */
   private offset = new Vector3();
+  /** Where the settings want the table; `offset` glides toward it. */
+  private goal = new Vector3();
   private highContrast = false;
   private immersive = false;
 
@@ -169,6 +173,13 @@ export class PuzzleSystem extends createSystem({
     if (this.boardIndex > 0) this.everPlaced = true;
     this.buildBoard(this.boardIndex);
     this.applySettings(getSettings());
+    // No glide on the first frame: start where the settings say.
+    this.moveTable(this.goal.y, this.goal.z);
+  }
+
+  /** Short confirmation sound at a point (posture fit). */
+  cue(position: Vector3): void {
+    this.sounds.pick(position);
   }
 
   /** Current board number, 1-based, for UI and tests. */
@@ -344,8 +355,21 @@ export class PuzzleSystem extends createSystem({
 
   /** Table height/distance, high contrast and music. */
   private applySettings(next: Readonly<Settings>): void {
-    const dy = next.height - this.offset.y;
-    const dz = next.closer - this.offset.z;
+    this.goal.set(0, next.height, next.closer);
+
+    if (next.highContrast !== this.highContrast) {
+      this.highContrast = next.highContrast;
+      for (const piece of this.queries.pieces.entities) this.stylePiece(piece);
+      for (const slot of this.queries.slots.entities) this.styleSlot(slot);
+    }
+    this.matMaterial.color.set(this.highContrast ? MAT_COLOR_CONTRAST : MAT_COLOR);
+    this.sounds.setMusic(this.immersive && next.music);
+  }
+
+  /** Moves the table, and everything that lives on it, to an offset. */
+  private moveTable(height: number, closer: number): void {
+    const dy = height - this.offset.y;
+    const dz = closer - this.offset.z;
     if (dy !== 0 || dz !== 0) {
       for (const piece of this.queries.pieces.entities) {
         const home = piece.getVectorView(Piece, 'home');
@@ -371,19 +395,11 @@ export class PuzzleSystem extends createSystem({
       }
       if (this.table) {
         // The plinth's origin is its base, so scaling Y raises only the top.
-        this.table.scale.y = (TABLE_HEIGHT + next.height) / TABLE_HEIGHT;
-        this.table.position.z = this.tableBaseZ + next.closer;
+        this.table.scale.y = (TABLE_HEIGHT + height) / TABLE_HEIGHT;
+        this.table.position.z = this.tableBaseZ + closer;
       }
-      this.offset.set(0, next.height, next.closer);
+      this.offset.set(0, height, closer);
     }
-
-    if (next.highContrast !== this.highContrast) {
-      this.highContrast = next.highContrast;
-      for (const piece of this.queries.pieces.entities) this.stylePiece(piece);
-      for (const slot of this.queries.slots.entities) this.styleSlot(slot);
-    }
-    this.matMaterial.color.set(this.highContrast ? MAT_COLOR_CONTRAST : MAT_COLOR);
-    this.sounds.setMusic(this.immersive && next.music);
   }
 
   private get pieceGlow(): number {
@@ -425,6 +441,15 @@ export class PuzzleSystem extends createSystem({
     let justPlaced = false;
     this.now = time;
     this.recordTrails();
+
+    if (this.offset.y !== this.goal.y || this.offset.z !== this.goal.z) {
+      const kt = 1 - Math.exp(-TABLE_GLIDE_RATE * delta);
+      let y = this.offset.y + (this.goal.y - this.offset.y) * kt;
+      let z = this.offset.z + (this.goal.z - this.offset.z) * kt;
+      if (Math.abs(this.goal.y - y) < 0.0005) y = this.goal.y;
+      if (Math.abs(this.goal.z - z) < 0.0005) z = this.goal.z;
+      this.moveTable(y, z);
+    }
 
     for (const shape in this.heldShapes) this.heldShapes[shape as ShapeKind] = false;
     for (const piece of this.queries.held.entities) {

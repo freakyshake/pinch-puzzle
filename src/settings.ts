@@ -9,6 +9,11 @@ export interface Settings {
   height: number;
   /** Table distance offset in meters (positive is closer to the player). */
   closer: number;
+  /**
+   * True once the player has chosen a height with Lower or Higher: that
+   * height is kept. While false the table follows the player's eye height.
+   */
+  heightSet: boolean;
   highContrast: boolean;
   music: boolean;
 }
@@ -27,6 +32,7 @@ const KEY = 'pinch-puzzle.settings.v1';
 const DEFAULTS: Settings = {
   height: -0.2,
   closer: 0,
+  heightSet: false,
   highContrast: false,
   music: true,
 };
@@ -53,12 +59,19 @@ function load(): Settings {
     return {
       height: clamp(finiteOr(parsed.height, DEFAULTS.height), HEIGHT_MIN, HEIGHT_MAX),
       closer: clamp(finiteOr(parsed.closer, DEFAULTS.closer), CLOSER_MIN, CLOSER_MAX),
+      // Settings saved before this flag existed already hold a chosen height.
+      heightSet: parsed.heightSet ?? parsed.height != null,
       highContrast: parsed.highContrast === true,
       music: parsed.music !== false,
     };
   } catch {
     return { ...DEFAULTS };
   }
+}
+
+/** Nearest height the Lower and Higher buttons can reach. */
+export function snapHeight(height: number): number {
+  return clamp(Math.round(height / HEIGHT_STEP) * HEIGHT_STEP, HEIGHT_MIN, HEIGHT_MAX);
 }
 
 export function getSettings(): Readonly<Settings> {

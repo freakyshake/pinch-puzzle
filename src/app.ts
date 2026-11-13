@@ -2,6 +2,7 @@ import { VisibilityState, World } from '@iwsdk/core';
 import projectOptions from 'virtual:iwsdk-project';
 import { setFrameLimit } from './frame-limit.js';
 import { PanelSystem } from './panel.js';
+import { PostureSystem } from './posture.js';
 import { PuzzleSystem } from './puzzle-system.js';
 import { SettingsPanelSystem } from './settings-panel.js';
 import { installLightPanning, useFullSpatialAudio } from './spatial-audio.js';
@@ -19,6 +20,7 @@ export async function start(container: HTMLDivElement): Promise<void> {
   const world = await World.create(container, projectOptions);
   world.registerSystem(PuzzleSystem);
   world.registerSystem(PanelSystem);
+  world.registerSystem(PostureSystem);
   world.registerSystem(SettingsPanelSystem);
 
   world.visibilityState.subscribe((state) => {

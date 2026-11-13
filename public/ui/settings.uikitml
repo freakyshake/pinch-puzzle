@@ -4,6 +4,8 @@
   fingertip, or point and pinch from a distance.
   Each row has an icon chip in one of the piece colors. The two toggles are
   tinted by SettingsPanelSystem (green when on) and always say On or Off.
+  Fit to me asks PostureSystem to fit the game to the player's head: table
+  height when upright, the whole world when leaning back or lying down.
 -->
 <style>
   .panel-root {
@@ -114,6 +116,32 @@
     width: 196px;
     justify-content: center;
   }
+
+  .fit {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .fit-btn {
+    width: 400px;
+    justify-content: center;
+    background-color: #f5d90a;
+    color: #1c1d20;
+  }
+
+  .fit-btn:hover {
+    background-color: #ffe95c;
+  }
+
+  .note {
+    color: #4a4c55;
+    font-size: 15px;
+  }
+
+  .note:dark {
+    color: #c3c6cf;
+  }
 </style>
 <Panel class="panel-root">
   <div class="header">
@@ -121,6 +149,15 @@
     <span class="title">COMFORT</span>
   </div>
   <div class="body">
+    <div class="fit">
+      <Button id="fit-to-me" class="fit-btn">
+        <ButtonIcon>
+          <Accessibility></Accessibility>
+        </ButtonIcon>
+        <ButtonLabel>Fit to me</ButtonLabel>
+      </Button>
+      <span class="note">Or pinch and hold in the air for 3 seconds</span>
+    </div>
     <div class="row">
       <div class="name">
         <div class="chip coral"><MoveVertical class="chip-icon"></MoveVertical></div>

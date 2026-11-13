@@ -1,4 +1,5 @@
 import { createSystem, UIKit, UIKitMLAsset } from '@iwsdk/core';
+import { PostureSystem } from './posture.js';
 import { PuzzleSystem } from './puzzle-system.js';
 import {
   CLOSER_STEP,
@@ -43,10 +44,10 @@ export class SettingsPanelSystem extends createSystem({}) {
     };
 
     bind('height-down', () =>
-      updateSettings({ height: getSettings().height - HEIGHT_STEP }),
+      updateSettings({ height: getSettings().height - HEIGHT_STEP, heightSet: true }),
     );
     bind('height-up', () =>
-      updateSettings({ height: getSettings().height + HEIGHT_STEP }),
+      updateSettings({ height: getSettings().height + HEIGHT_STEP, heightSet: true }),
     );
     bind('move-closer', () =>
       updateSettings({ closer: getSettings().closer + CLOSER_STEP }),
@@ -59,6 +60,7 @@ export class SettingsPanelSystem extends createSystem({}) {
     );
     bind('music-toggle', () => updateSettings({ music: !getSettings().music }));
     bind('reset-settings', () => resetSettings());
+    bind('fit-to-me', () => this.world.getSystem(PostureSystem)?.requestFit());
     bind('restart-board', () => this.world.getSystem(PuzzleSystem)?.restartBoard());
 
     const contrastLabel = panel.getElementById<UIKit.Text>('contrast-label');

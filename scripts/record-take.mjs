@@ -49,15 +49,24 @@ function autoplay(...args) {
   levelHead();
 }
 
-/** Poke a button on a panel with the left hand. */
+/** Where a named button is right now (panels move with the table). */
+function targetPosition(name) {
+  const all = JSON.stringify(cli('xr', 'list-targets', {}));
+  const m = all.match(
+    new RegExp(`"name":"${name}","position":\{"x":([-0-9.e]+),"y":([-0-9.e]+),"z":([-0-9.e]+)\}`),
+  );
+  if (!m) throw new Error(`No target named ${name}`);
+  return { x: Number(m[1]), y: Number(m[2]), z: Number(m[3]) };
+}
+
+/**
+ * Click a panel button the way the panel says: point at it and pinch. In the
+ * emulator this registers every time; a scripted fingertip press only
+ * registers for the first press after a page load.
+ */
 function press(target) {
-  // gaze fixed: the head stays put, so the camera does not swing or tilt.
-  cli('xr', 'run-sequence', {
-    device: 'hand-left',
-    gaze: 'fixed',
-    steps: [{ target, press: {} }],
-  });
-  levelHead();
+  cli('xr', 'look-at', { device: 'hand-right', target: targetPosition(target) });
+  cli('xr', 'select', { device: 'hand-right', duration: 0.2 });
 }
 
 function shot(label) {
@@ -83,13 +92,25 @@ async function prep() {
   cli('xr', 'enter', {});
   await sleep(1500);
   cli('xr', 'set-input-mode', { mode: 'hand' });
-  // Defaults: lower table, contrast off, music on.
+  // Right hand up first so it can point; then defaults: table height,
+  // contrast off, music on.
+  cli('xr', 'run-sequence', {
+    device: 'hand-right',
+    gaze: 'fixed',
+    steps: [{ anchor: 'wrist', position: { x: 0.22, y: 0.95, z: -0.05 }, duration: 0.6 }],
+  });
   press('reset-settings');
   // Park the left hand low and out of the way after the reset press.
   cli('xr', 'run-sequence', {
     device: 'hand-left',
     gaze: 'fixed',
     steps: [{ anchor: 'wrist', position: { x: -0.35, y: 0.6, z: -0.1 }, duration: 0.6 }],
+  });
+  // Right hand out in front of the shoulder, ready to point at the panels.
+  cli('xr', 'run-sequence', {
+    device: 'hand-right',
+    gaze: 'fixed',
+    steps: [{ anchor: 'wrist', position: { x: 0.22, y: 0.95, z: -0.05 }, duration: 0.6 }],
   });
   levelHead();
 }
