@@ -14,7 +14,10 @@ export interface Settings {
 }
 
 export const HEIGHT_STEP = 0.04;
-export const HEIGHT_MIN = -0.2;
+// Table top heights: default 0.575 m, lowest 0.415 m, highest 0.935 m. A
+// Quest 3 tester seated in an office chair needed 0.575 m (Nov 13), which
+// was the old lowest setting, so that is now the default with room below.
+export const HEIGHT_MIN = -0.36;
 export const HEIGHT_MAX = 0.16;
 export const CLOSER_STEP = 0.05;
 export const CLOSER_MIN = -0.1;
@@ -22,7 +25,7 @@ export const CLOSER_MAX = 0.2;
 
 const KEY = 'pinch-puzzle.settings.v1';
 const DEFAULTS: Settings = {
-  height: -0.08,
+  height: -0.2,
   closer: 0,
   highContrast: false,
   music: true,
