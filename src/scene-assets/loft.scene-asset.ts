@@ -295,7 +295,7 @@ function duskTexture(): DataTexture {
  * cloud streaks, two hill ranges in purple haze, and the sun's path on the
  * water. Painted once; v = 0 is the top.
  */
-function sunsetTexture(width = 1024, height = 512): DataTexture {
+function sunsetTexture(width = 512, height = 256): DataTexture {
   const cloud = valueNoise(61, 12);
   const cloudFine = valueNoise(67, 48);
   const ridgeFar = valueNoise(71, 7);
