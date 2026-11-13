@@ -44,6 +44,10 @@ const WIN_DURATION = 3.2;
 const IDLE_HINT = 20;
 /** Height of the puzzle-table asset (createPlinth(0.74, 1.1)). */
 const TABLE_HEIGHT = 0.74;
+/** Scene node of the wall shelf; its children trophy-1.. appear as boards are solved. */
+const TROPHY_SHELF = 'trophy-shelf';
+/** Seconds a newly earned trophy takes to pop in. */
+const TROPHY_POP = 0.7;
 /** Scene nodes that move with the table when height or distance change. */
 const FOLLOWERS = ['progress-panel', 'settings-panel'];
 
@@ -99,6 +103,10 @@ export class PuzzleSystem extends createSystem({
   private table: Object3D | undefined;
   private tableBaseZ = 0;
   private followers: Object3D[] = [];
+  private trophies: Object3D[] = [];
+  /** Trophy that is popping in, and how far along it is (0 to 1). */
+  private newTrophy: Object3D | null = null;
+  private trophyTime = 0;
 
   /** Applied table offset: y = height, z = toward the player. */
   private offset = new Vector3();
@@ -146,6 +154,11 @@ export class PuzzleSystem extends createSystem({
       const object = this.world.getSceneObject(id);
       if (object) this.followers.push(object);
     }
+    const shelf = this.world.getSceneObject(TROPHY_SHELF);
+    for (let i = 1; i <= BOARDS.length; i++) {
+      const trophy = shelf?.getObjectByName(`trophy-${i}`);
+      if (trophy) this.trophies.push(trophy);
+    }
 
     this.cleanupFuncs.push(
       this.queries.held.subscribe('qualify', (entity) => {
@@ -171,6 +184,7 @@ export class PuzzleSystem extends createSystem({
     this.boardIndex = startBoardFromUrl();
     // Skipping ahead (testing, demo recording) also skips the first-run demo.
     if (this.boardIndex > 0) this.everPlaced = true;
+    this.showTrophies(this.boardIndex);
     this.buildBoard(this.boardIndex);
     this.applySettings(getSettings());
     // No glide on the first frame: start where the settings say.
@@ -197,9 +211,19 @@ export class PuzzleSystem extends createSystem({
     this.buildBoard(this.boardIndex);
   }
 
+  /** The shelf shows one trophy for each of the first `count` boards. */
+  private showTrophies(count: number): void {
+    this.newTrophy = null;
+    for (let i = 0; i < this.trophies.length; i++) {
+      this.trophies[i].visible = i < count;
+      this.trophies[i].scale.setScalar(1);
+    }
+  }
+
   /** Back to board 1 (Play again). */
   restartGame(): void {
     this.clearBoard();
+    this.showTrophies(0);
     this.boardIndex = 0;
     this.buildBoard(0);
   }
@@ -421,6 +445,13 @@ export class PuzzleSystem extends createSystem({
     const last = this.boardIndex === BOARDS.length - 1;
     this.phase = last ? Phase.Complete : Phase.Won;
     this.winTimer = 0;
+    // This board's trophy pops onto the shelf.
+    this.newTrophy = this.trophies[this.boardIndex] ?? null;
+    this.trophyTime = 0;
+    if (this.newTrophy) {
+      this.newTrophy.scale.setScalar(0.001);
+      this.newTrophy.visible = true;
+    }
     if (last) {
       this.sounds.complete();
       this.panel.showComplete(BOARDS.length);
@@ -559,6 +590,14 @@ export class PuzzleSystem extends createSystem({
         this.boardIndex = (this.boardIndex + 1) % BOARDS.length;
         this.buildBoard(this.boardIndex);
       }
+    }
+
+    if (this.newTrophy) {
+      this.trophyTime = Math.min(1, this.trophyTime + delta / TROPHY_POP);
+      // Overshoot a little, then settle at full size.
+      const t = this.trophyTime;
+      this.newTrophy.scale.setScalar(Math.max(0.001, t + 0.35 * Math.sin(t * Math.PI)));
+      if (t >= 1) this.newTrophy = null;
     }
 
     this.updateDemo(delta);

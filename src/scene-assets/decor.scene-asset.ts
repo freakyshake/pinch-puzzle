@@ -21,6 +21,7 @@ import {
   TorusGeometry,
   UnsignedByteType,
 } from '@iwsdk/core';
+import { mergeByMaterial } from './lib/merge.js';
 
 /**
  * Background furniture for the VR and Desktop 3D starters, built in code so
@@ -634,6 +635,7 @@ function floorLamp(): Group {
 /** Marble block with a sand clay sculpture of two horns, and a floor vase. */
 export function createGallerySet(): Group {
   const set = new Group();
+  set.name = 'gallery-set';
   const height = 0.84;
   const block = part(
     {
@@ -661,7 +663,8 @@ export function createGallerySet(): Group {
   vase.position.set(-0.95, 0, -0.15);
   vase.scale.setScalar(1.25);
   set.add(vase);
-  return set;
+  // Static furniture: one mesh per material instead of dozens of parts.
+  return mergeByMaterial(set);
 }
 
 /**
@@ -670,6 +673,7 @@ export function createGallerySet(): Group {
  */
 export function createSideboardSet(): Group {
   const set = new Group();
+  set.name = 'sideboard-set';
   const legHeight = 0.22;
   const width = 1.8;
   const depth = 0.45;
@@ -777,5 +781,6 @@ export function createSideboardSet(): Group {
   lamp.name = 'floor-lamp';
   lamp.position.set(1.1, 0, -0.08);
   set.add(vase, books, lamp);
-  return set;
+  // Static furniture: one mesh per material instead of dozens of parts.
+  return mergeByMaterial(set);
 }

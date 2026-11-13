@@ -12,6 +12,12 @@ import {
   createSideboardSet,
 } from './scene-assets/decor.scene-asset.js';
 import {
+  createPlant,
+  createRoomShell,
+  createTrophyShelf,
+  createWallArt,
+} from './scene-assets/room.scene-asset.js';
+import {
   createGraphiteCube,
   createGraphiteGem,
   createGraphiteKnot,
@@ -51,6 +57,10 @@ export default defineAssets({
   'graphite-gem': createGraphiteGem(),
   'graphite-knot': createGraphiteKnot(),
   'graphite-ring': createGraphiteRing(),
+  room: createRoomShell(),
+  'wall-art': createWallArt(),
+  plant: createPlant(),
+  'trophy-shelf': createTrophyShelf(),
   'gallery-set': createGallerySet(),
   'sideboard-set': createSideboardSet(),
   // Onboarding demo hand; spawned at runtime by PuzzleSystem, listed here so
