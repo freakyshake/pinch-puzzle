@@ -2,27 +2,46 @@
   Comfort and accessibility settings, beside the table. SettingsPanelSystem
   wires the button IDs; values persist in localStorage. Poke a button with a
   fingertip, or point and pinch from a distance.
+  Each row has an icon chip in one of the piece colors. The two toggles are
+  tinted by SettingsPanelSystem (green when on) and always say On or Off.
 -->
 <style>
   .panel-root {
     flex-direction: column;
-    width: 400px;
-    padding-top: 18px;
-    padding-bottom: 18px;
+    width: 440px;
+  }
+
+  .header {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding-top: 14px;
+    padding-bottom: 14px;
     padding-left: 20px;
     padding-right: 20px;
-    gap: 12px;
+    background-color: #2a2556;
+  }
+
+  .header-icon {
+    width: 26px;
+    height: 26px;
+    color: #f5d90a;
   }
 
   .title {
-    color: #6b5a00;
-    font-size: 18px;
+    color: #f5d90a;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: 1.6px;
   }
 
-  .title:dark {
-    color: #f5d90a;
+  .body {
+    flex-direction: column;
+    padding-top: 16px;
+    padding-bottom: 18px;
+    padding-left: 20px;
+    padding-right: 20px;
+    gap: 12px;
   }
 
   .row {
@@ -30,6 +49,44 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+  }
+
+  .name {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 10px;
+  }
+
+  .chip {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .chip-icon {
+    width: 22px;
+    height: 22px;
+    color: #1c1d20;
+  }
+
+  .coral {
+    background-color: #e9805f;
+  }
+
+  .blue {
+    background-color: #5fa8e9;
+  }
+
+  .yellow {
+    background-color: #f2c14e;
+  }
+
+  .purple {
+    background-color: #b57be0;
   }
 
   .label {
@@ -49,41 +106,58 @@
   }
 
   .btn {
-    width: 104px;
+    width: 100px;
     justify-content: center;
   }
 
   .wide {
-    width: 146px;
+    width: 196px;
     justify-content: center;
   }
 </style>
 <Panel class="panel-root">
-  <span class="title">COMFORT</span>
-  <div class="row">
-    <span class="label">Table height</span>
-    <div class="pair">
-      <Button id="height-down" class="btn"><ButtonLabel>Lower</ButtonLabel></Button>
-      <Button id="height-up" class="btn"><ButtonLabel>Higher</ButtonLabel></Button>
+  <div class="header">
+    <SlidersHorizontal class="header-icon"></SlidersHorizontal>
+    <span class="title">COMFORT</span>
+  </div>
+  <div class="body">
+    <div class="row">
+      <div class="name">
+        <div class="chip coral"><MoveVertical class="chip-icon"></MoveVertical></div>
+        <span class="label">Table height</span>
+      </div>
+      <div class="pair">
+        <Button id="height-down" class="btn"><ButtonLabel>Lower</ButtonLabel></Button>
+        <Button id="height-up" class="btn"><ButtonLabel>Higher</ButtonLabel></Button>
+      </div>
     </div>
-  </div>
-  <div class="row">
-    <span class="label">Distance</span>
-    <div class="pair">
-      <Button id="move-closer" class="btn"><ButtonLabel>Closer</ButtonLabel></Button>
-      <Button id="move-farther" class="btn"><ButtonLabel>Farther</ButtonLabel></Button>
+    <div class="row">
+      <div class="name">
+        <div class="chip blue"><MoveHorizontal class="chip-icon"></MoveHorizontal></div>
+        <span class="label">Distance</span>
+      </div>
+      <div class="pair">
+        <Button id="move-closer" class="btn"><ButtonLabel>Closer</ButtonLabel></Button>
+        <Button id="move-farther" class="btn"><ButtonLabel>Farther</ButtonLabel></Button>
+      </div>
     </div>
-  </div>
-  <div class="row">
-    <span class="label">High contrast</span>
-    <Button id="contrast-toggle" class="btn"><ButtonLabel id="contrast-label">Off</ButtonLabel></Button>
-  </div>
-  <div class="row">
-    <span class="label">Music</span>
-    <Button id="music-toggle" class="btn"><ButtonLabel id="music-label">On</ButtonLabel></Button>
-  </div>
-  <div class="row">
-    <Button id="restart-board" class="wide"><ButtonLabel>Restart board</ButtonLabel></Button>
-    <Button id="reset-settings" class="wide"><ButtonLabel>Reset</ButtonLabel></Button>
+    <div class="row">
+      <div class="name">
+        <div class="chip yellow"><Contrast class="chip-icon"></Contrast></div>
+        <span class="label">High contrast</span>
+      </div>
+      <Button id="contrast-toggle" class="btn"><ButtonLabel id="contrast-label">Off</ButtonLabel></Button>
+    </div>
+    <div class="row">
+      <div class="name">
+        <div class="chip purple"><Music class="chip-icon"></Music></div>
+        <span class="label">Music</span>
+      </div>
+      <Button id="music-toggle" class="btn"><ButtonLabel id="music-label">On</ButtonLabel></Button>
+    </div>
+    <div class="row">
+      <Button id="restart-board" class="wide"><ButtonLabel>Restart board</ButtonLabel></Button>
+      <Button id="reset-settings" class="wide"><ButtonLabel>Reset</ButtonLabel></Button>
+    </div>
   </div>
 </Panel>

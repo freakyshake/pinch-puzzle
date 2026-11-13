@@ -4,6 +4,7 @@ import { setFrameLimit } from './frame-limit.js';
 import { PanelSystem } from './panel.js';
 import { PuzzleSystem } from './puzzle-system.js';
 import { SettingsPanelSystem } from './settings-panel.js';
+import { installLightPanning, useFullSpatialAudio } from './spatial-audio.js';
 import { warmUpShaders } from './warm-up.js';
 
 /** The flat page never needs more than this many pixels per CSS pixel. */
@@ -14,6 +15,7 @@ const FLAT_PIXEL_RATIO = 1.25;
  * on demand by index.ts, after it has checked that the browser can run it.
  */
 export async function start(container: HTMLDivElement): Promise<void> {
+  installLightPanning();
   const world = await World.create(container, projectOptions);
   world.registerSystem(PuzzleSystem);
   world.registerSystem(PanelSystem);
@@ -22,6 +24,7 @@ export async function start(container: HTMLDivElement): Promise<void> {
   world.visibilityState.subscribe((state) => {
     const flat = state === VisibilityState.NonImmersive;
     setFrameLimit(flat);
+    if (!flat) useFullSpatialAudio();
     // Pixel ratio only sizes the flat canvas; in VR the headset sets the
     // resolution. three.js refuses size changes while presenting.
     if (flat && !world.renderer.xr.isPresenting) {

@@ -9,6 +9,8 @@
  *   node scripts/autoplay.mjs --all        solve every remaining board
  *   node scripts/autoplay.mjs --wrong      first drop one piece on a wrong slot
  *   node scripts/autoplay.mjs --slow       slower moves, easier to follow
+ *   node scripts/autoplay.mjs --steady     keep the head still (for recording);
+ *                                          by default it turns to each target
  *
  * The CLI is called directly through node (no shell), so the JSON arguments
  * need no quoting on Windows, macOS or Linux.
@@ -34,6 +36,8 @@ if (flag('--all')) boardsToSolve = BOARD_COUNT_FROM_PANEL;
 const boardsIdx = args.indexOf('--boards');
 if (boardsIdx >= 0) boardsToSolve = Number(args[boardsIdx + 1]) || 1;
 const WRONG_FIRST = flag('--wrong');
+/** 'fixed' keeps the emulated head where it is while the hand moves. */
+const GAZE = flag('--steady') ? 'fixed' : 'follow';
 const SLOW = flag('--slow') ? 2 : 1;
 
 /** Height above a slot (table top) to carry the held piece to before letting go. */
@@ -129,6 +133,7 @@ function readPanel(ids = ['board-label', 'board-name', 'placed-text']) {
 function moveTo(pieceName, [x, y, z]) {
   cli('xr', 'run-sequence', {
     device: 'hand-right',
+    gaze: GAZE,
     steps: [
       {
         label: 'grab',

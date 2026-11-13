@@ -12,6 +12,18 @@ import {
 /** Scene node ID of the comfort panel beside the table. */
 const PANEL_NODE = 'settings-panel';
 
+/** Toggle look: green when on, slate when off. The label always says which. */
+const TOGGLE_ON = {
+  backgroundColor: '#5fd3a6',
+  color: '#10261c',
+  hover: { backgroundColor: '#7fe0b9' },
+};
+const TOGGLE_OFF = {
+  backgroundColor: '#565a66',
+  color: '#fafaf7',
+  hover: { backgroundColor: '#6a6f7c' },
+};
+
 /**
  * Wires the comfort panel: table height and distance, high contrast, music,
  * restart board and reset. Buttons respond to a fingertip poke or a pinch
@@ -51,8 +63,12 @@ export class SettingsPanelSystem extends createSystem({}) {
 
     const contrastLabel = panel.getElementById<UIKit.Text>('contrast-label');
     const musicLabel = panel.getElementById<UIKit.Text>('music-label');
+    const contrastToggle = panel.getElementById('contrast-toggle');
+    const musicToggle = panel.getElementById('music-toggle');
     const refresh = () => {
       const s = getSettings();
+      contrastToggle?.setProperties(s.highContrast ? TOGGLE_ON : TOGGLE_OFF);
+      musicToggle?.setProperties(s.music ? TOGGLE_ON : TOGGLE_OFF);
       contrastLabel?.setProperties({ text: s.highContrast ? 'On' : 'Off' });
       musicLabel?.setProperties({ text: s.music ? 'On' : 'Off' });
     };

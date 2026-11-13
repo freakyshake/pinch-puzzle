@@ -41,6 +41,14 @@ const clayMaterial = createSceneMaterial({
   roughness: 0.9,
 });
 
+// The round stage under the table: a soft apricot, so the room is not all white.
+const stageMaterial = createSceneMaterial({
+  id: 'studio-stage',
+  model: 'standard',
+  baseColor: '#F2CDB5',
+  roughness: 0.9,
+});
+
 const stoneMaterial = createSceneMaterial({
   id: 'studio-stone',
   model: 'standard',
@@ -192,7 +200,7 @@ export function createStage(radius = 1.85): Group {
         segments: 128,
       },
     },
-    clayMaterial,
+    stageMaterial,
   );
   const inlay = createScenePrimitiveObject(
     {

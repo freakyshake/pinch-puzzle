@@ -1,6 +1,8 @@
 <!--
   Progress panel behind the puzzle table. PuzzleSystem drives the element IDs
-  board-label, board-name, placed-text, bar-fill, header and step-1..step-6.
+  board-label, board-name, placed-text, bar-fill, header, header-accent and
+  step-1..step-6. Each board has its own color (the piece colors, in order):
+  it tints the header stripe, the board label, the bar and that board's step.
   The header and steps use explicit colors so they read the same in both
   color schemes; text on the Panel surface has a dark default and a :dark
   variant because iwsdk.config.json prefers the dark color scheme.
@@ -12,17 +14,28 @@
   }
 
   .header {
+    flex-direction: row;
+    background-color: #2a2556;
+  }
+
+  .accent {
+    width: 14px;
+    flex-shrink: 0;
+    background-color: #e9805f;
+  }
+
+  .header-text {
     flex-direction: column;
+    flex-grow: 1;
     gap: 4px;
     padding-top: 20px;
     padding-bottom: 20px;
-    padding-left: 26px;
+    padding-left: 18px;
     padding-right: 26px;
-    background-color: #2b2f3a;
   }
 
   .eyebrow {
-    color: #f5d90a;
+    color: #e9805f;
     font-size: 18px;
     font-weight: 700;
     letter-spacing: 1.6px;
@@ -38,8 +51,10 @@
   .steps {
     flex-direction: row;
     justify-content: center;
+    align-items: center;
     gap: 12px;
-    padding-top: 22px;
+    margin-top: 20px;
+    height: 22px;
     padding-left: 26px;
     padding-right: 26px;
   }
@@ -79,7 +94,7 @@
     width: 0%;
     height: 16px;
     border-radius: 8px;
-    background-color: #f5d90a;
+    background-color: #e9805f;
   }
 
   .hint {
@@ -104,11 +119,23 @@
   .button-label {
     transform-translate-y: 1px;
   }
+
+  .primary {
+    background-color: #f5d90a;
+    color: #1c1d20;
+  }
+
+  .primary:hover {
+    background-color: #ffe95c;
+  }
 </style>
 <Panel class="panel-root">
   <div id="header" class="header">
-    <span id="board-label" class="eyebrow">BOARD 1 OF 6</span>
-    <span id="board-name" class="heading">First Light</span>
+    <div id="header-accent" class="accent"></div>
+    <div class="header-text">
+      <span id="board-label" class="eyebrow">BOARD 1 OF 6</span>
+      <span id="board-name" class="heading">First Light</span>
+    </div>
   </div>
   <div class="steps">
     <div id="step-1" class="step"></div>
@@ -129,7 +156,7 @@
     </ButtonIcon>
     <ButtonLabel class="button-label">Play again</ButtonLabel>
   </Button>
-  <Button id="xr-button" class="button">
+  <Button id="xr-button" class="button primary">
     <ButtonIcon>
       <RectangleGoggles></RectangleGoggles>
     </ButtonIcon>

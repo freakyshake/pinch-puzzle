@@ -4,10 +4,23 @@ import { UIKit, UIKitMLAsset, World } from '@iwsdk/core';
 const PANEL_NODE = 'progress-panel';
 const STEP_COUNT = 6;
 
+/** One color per board, in play order: the six piece colors. */
+const BOARD_COLORS = [
+  '#e9805f',
+  '#5fa8e9',
+  '#f2c14e',
+  '#b57be0',
+  '#5fd3a6',
+  '#ef6f9a',
+];
 const COLOR_DONE = '#5fd3a6';
-const COLOR_CURRENT = '#f5d90a';
-const COLOR_UPCOMING = '#6b6f78';
-const HEADER_PLAYING = '#2b2f3a';
+const COLOR_UPCOMING = '#565a66';
+const HEADER_PLAYING = '#2a2556';
+const ACCENT_SOLVED = '#2f9e78';
+const ACCENT_COMPLETE = '#c9a700';
+/** The current board's step is taller, so it never relies on color alone. */
+const STEP_HEIGHT = 14;
+const STEP_HEIGHT_CURRENT = 22;
 const HEADER_SOLVED = '#5fd3a6';
 const HEADER_COMPLETE = '#f5d90a';
 const TEXT_LIGHT = '#fafaf7';
@@ -25,6 +38,8 @@ export class ProgressPanel {
   private placed: Element | null = null;
   private bar: Element | null = null;
   private header: Element | null = null;
+  private accent: Element | null = null;
+  private boardColor = BOARD_COLORS[0];
   private hint: Element | null = null;
   private playAgain: Element | null = null;
   private steps: (Element | null)[] = [];
@@ -39,6 +54,7 @@ export class ProgressPanel {
     this.placed = el('placed-text');
     this.bar = el('bar-fill');
     this.header = el('header');
+    this.accent = el('header-accent');
     this.hint = el('hint');
     this.playAgain = el('play-again');
     for (let i = 1; i <= STEP_COUNT; i++) this.steps.push(el(`step-${i}`));
@@ -59,12 +75,14 @@ export class ProgressPanel {
     placed: number,
     total: number,
   ): void {
+    this.boardColor = BOARD_COLORS[index % BOARD_COLORS.length];
     this.label?.setProperties({
       text: `BOARD ${index + 1} OF ${count}`,
-      color: COLOR_CURRENT,
+      color: this.boardColor,
     });
     this.name?.setProperties({ text: boardName, color: TEXT_LIGHT });
     this.header?.setProperties({ backgroundColor: HEADER_PLAYING });
+    this.accent?.setProperties({ backgroundColor: this.boardColor });
     this.hint?.setProperties({ text: hint, display: hint ? 'flex' : 'none' });
     this.playAgain?.setProperties({ display: 'none' });
     this.setSteps(index, false);
@@ -77,7 +95,7 @@ export class ProgressPanel {
     const pct = total > 0 ? Math.round((placed / total) * 100) : 0;
     this.bar?.setProperties({
       width: `${pct}%`,
-      backgroundColor: placed === total ? COLOR_DONE : COLOR_CURRENT,
+      backgroundColor: placed === total ? COLOR_DONE : this.boardColor,
     });
   }
 
@@ -89,6 +107,7 @@ export class ProgressPanel {
     });
     this.name?.setProperties({ text: 'Solved!', color: TEXT_DARK });
     this.header?.setProperties({ backgroundColor: HEADER_SOLVED });
+    this.accent?.setProperties({ backgroundColor: ACCENT_SOLVED });
     this.hint?.setProperties({ display: 'none' });
     this.setSteps(index, true);
   }
@@ -98,6 +117,7 @@ export class ProgressPanel {
     this.label?.setProperties({ text: `ALL ${count} BOARDS`, color: TEXT_DARK });
     this.name?.setProperties({ text: 'All solved!', color: TEXT_DARK });
     this.header?.setProperties({ backgroundColor: HEADER_COMPLETE });
+    this.accent?.setProperties({ backgroundColor: ACCENT_COMPLETE });
     this.hint?.setProperties({
       text: 'Thanks for playing. Again?',
       display: 'flex',
@@ -114,12 +134,12 @@ export class ProgressPanel {
   private setSteps(current: number, currentDone: boolean): void {
     for (let i = 0; i < this.steps.length; i++) {
       const done = i < current || (i === current && currentDone);
-      const color = done
-        ? COLOR_DONE
-        : i === current
-          ? COLOR_CURRENT
-          : COLOR_UPCOMING;
-      this.steps[i]?.setProperties({ backgroundColor: color });
+      const playing = i === current && !currentDone;
+      this.steps[i]?.setProperties({
+        backgroundColor:
+          done || playing ? BOARD_COLORS[i % BOARD_COLORS.length] : COLOR_UPCOMING,
+        height: playing ? STEP_HEIGHT_CURRENT : STEP_HEIGHT,
+      });
     }
   }
 }

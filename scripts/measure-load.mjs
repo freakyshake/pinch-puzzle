@@ -3,7 +3,7 @@
  * Cold-load measurement of a built copy of the game, in a clean Chromium
  * profile on the real GPU (not the software renderer).
  *
- *   node scripts/measure-load.mjs [dir-or-url] [--profile] [--shaders] [--screenshot file.png] [--headed]
+ *   node scripts/measure-load.mjs [dir-or-url] [--profile] [--shaders] [--idle] [--memory] [--screenshot file.png] [--headed]
  *
  * Default target: ./dist (run `npm run build` first). A directory is served
  * from a local static server; a URL is opened as is.
@@ -11,6 +11,10 @@
  * Reports: time to first frame, main-thread blocking (long tasks), frame
  * pacing after load, JS heap, and process memory by type. `--profile` adds
  * the functions with the most CPU self time.
+ * `--idle` measures the page left alone for 10 s after load: CPU use of each
+ * browser process (the task manager's CPU column) and where the page's own
+ * script time goes. `--memory` asks the browser for its own memory report
+ * and prints what the tab's memory footprint is made of.
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -25,7 +29,10 @@ const PROFILE = args.includes('--profile');
 const HEADED = args.includes('--headed');
 /** Simulates a browser with WebGL turned off. */
 const NO_WEBGL = args.includes('--no-webgl');
+const IDLE = args.includes('--idle');
+const MEMORY = args.includes('--memory');
 const SETTLE_MS = 6000;
+const IDLE_MS = 10000;
 
 const TYPES = {
   '.html': 'text/html',
@@ -163,7 +170,7 @@ page.on('response', async (r) => {
 await page.addInitScript(probe);
 const cdp = await context.newCDPSession(page);
 await cdp.send('Performance.enable');
-if (PROFILE) {
+if (PROFILE && !IDLE) {
   await cdp.send('Profiler.enable');
   await cdp.send('Profiler.setSamplingInterval', { interval: 500 });
   await cdp.send('Profiler.start');
@@ -197,8 +204,34 @@ const metrics = Object.fromEntries(
   (await cdp.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]),
 );
 
+const browserCdp = await context.browser()?.newBrowserCDPSession().catch(() => null);
+
+// Steady state: the page left alone. cpuTime is cumulative CPU seconds per
+// process, so two samples give the same percentage a task manager shows.
+let idle = null;
+if (IDLE && browserCdp) {
+  const sample = async () => new Map((await browserCdp.send('SystemInfo.getProcessInfo')).processInfo.map((x) => [x.id, x]));
+  await cdp.send('Profiler.enable');
+  await cdp.send('Profiler.setSamplingInterval', { interval: 500 });
+  const before = await sample();
+  const m0 = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]));
+  await cdp.send('Profiler.start');
+  const t0 = Date.now();
+  await page.waitForTimeout(IDLE_MS);
+  const seconds = (Date.now() - t0) / 1000;
+  const after = await sample();
+  const m1 = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]));
+  idle = {
+    seconds,
+    procs: [...after.values()].map((x) => ({ type: x.type, id: x.id, cpu: (100 * (x.cpuTime - (before.get(x.id)?.cpuTime ?? 0))) / seconds })),
+    script: (100 * (m1.ScriptDuration - m0.ScriptDuration)) / seconds,
+    task: (100 * (m1.TaskDuration - m0.TaskDuration)) / seconds,
+    frames: await page.evaluate((n) => window.__probe.frames.slice(-n).length, 2000),
+  };
+}
+
 let top = [];
-if (PROFILE) {
+if (PROFILE || IDLE) {
   const { profile } = await cdp.send('Profiler.stop');
   const self = new Map();
   const dt = profile.timeDeltas;
@@ -213,7 +246,6 @@ if (PROFILE) {
 }
 
 // Process memory by type (browser, renderer, GPU) from the OS.
-const browserCdp = await context.browser()?.newBrowserCDPSession().catch(() => null);
 let procs = [];
 if (browserCdp) {
   const info = await browserCdp.send('SystemInfo.getProcessInfo');
@@ -260,6 +292,64 @@ if (errors.length) console.log(`Errors: ${JSON.stringify(errors.slice(0, 5))}`);
 if (top.length) {
   console.log('\nTop CPU self time (ms):');
   for (const [k, v] of top) console.log(`  ${v.toFixed(0).padStart(6)}  ${k}`);
+}
+
+if (idle) {
+  console.log(`
+Left alone for ${idle.seconds.toFixed(1)} s (percent of one CPU core):`);
+  for (const x of idle.procs.sort((a, b) => b.cpu - a.cpu)) console.log(`  ${x.type.padEnd(10)} pid ${String(x.id).padEnd(6)} ${x.cpu.toFixed(1)} %`);
+  console.log(`  page main thread: ${idle.task.toFixed(1)} % busy, of which script ${idle.script.toFixed(1)} %`);
+}
+
+// The browser's own memory report (the same one behind chrome://tracing
+// memory dumps). private_footprint is the task manager's "Memory footprint".
+if (MEMORY && browserCdp) {
+  const events = [];
+  browserCdp.on('Tracing.dataCollected', (e) => events.push(...e.value));
+  await browserCdp.send('Tracing.start', {
+    traceConfig: { includedCategories: ['disabled-by-default-memory-infra'], excludedCategories: ['*'], memoryDumpConfig: { triggers: [] } },
+  });
+  await browserCdp.send('Tracing.requestMemoryDump', { levelOfDetail: 'detailed' });
+  const done = new Promise((resolve) => browserCdp.once('Tracing.tracingComplete', resolve));
+  await browserCdp.send('Tracing.end');
+  await done;
+  const types = new Map((await browserCdp.send('SystemInfo.getProcessInfo')).processInfo.map((x) => [x.id, x.type]));
+  const hex = (a) => (a && a.value !== undefined ? parseInt(a.value, 16) : 0);
+  const mb = (n) => (n / 1048576).toFixed(1).padStart(7);
+  const byPid = new Map();
+  for (const e of events) {
+    if (e.ph !== 'v' || !e.args?.dumps) continue;
+    const rec = byPid.get(e.pid) ?? { allocators: {}, totals: {} };
+    Object.assign(rec.allocators, e.args.dumps.allocators ?? {});
+    Object.assign(rec.totals, e.args.dumps.process_totals ?? {});
+    byPid.set(e.pid, rec);
+  }
+  if (args.includes('--memory-raw')) fs.writeFileSync('memory-dump.json', JSON.stringify([...byPid.entries()], null, 1));
+  for (const [pid, rec] of byPid) {
+    const type = types.get(pid) ?? 'unknown';
+    const size = {};
+    for (const [name, node] of Object.entries(rec.allocators)) {
+      const v = hex(node.attrs?.size);
+      if (v) size[name] = v;
+    }
+    // A parent's size already includes its children: list a child only under
+    // a parent, never add the two together.
+    const roots = Object.keys(size).filter((n) => !n.includes('/'));
+    const childSum = (prefix, depth) => Object.entries(size).filter(([n]) => n.startsWith(prefix + '/') && n.split('/').length === depth).reduce((x, [, v]) => x + v, 0);
+    const top = new Map();
+    for (const name of Object.keys(rec.allocators)) {
+      const root = name.split('/')[0];
+      if (!top.has(root)) top.set(root, size[root] ?? childSum(root, 2) ?? 0);
+    }
+    console.log(`
+Memory report, ${type} pid ${pid}: private footprint ${mb(hex({ value: rec.totals.private_footprint_bytes }))} MB, resident ${mb(hex({ value: rec.totals.resident_set_bytes }))} MB`);
+    if (type !== 'renderer' && type !== 'gpu') continue;
+    for (const [root, v] of [...top.entries()].sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 524288)) {
+      console.log(`  ${mb(v)} MB  ${root}`);
+      const kids = Object.entries(size).filter(([n]) => n.startsWith(root + '/') && n.split('/').length <= 3 && size[n] > 1048576).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      for (const [n, kv] of kids) console.log(`      ${mb(kv)} MB  ${n}`);
+    }
+  }
 }
 
 const shotIdx = args.indexOf('--screenshot');

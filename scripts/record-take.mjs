@@ -45,16 +45,33 @@ function cli(domain, action, input, timeoutMs = 45000) {
 }
 
 function autoplay(...args) {
-  spawnSync(process.execPath, [AUTOPLAY, ...args], { stdio: 'inherit' });
+  spawnSync(process.execPath, [AUTOPLAY, '--steady', ...args], { stdio: 'inherit' });
+  levelHead();
 }
 
 /** Poke a button on a panel with the left hand. */
 function press(target) {
-  cli('xr', 'run-sequence', { device: 'hand-left', steps: [{ target, press: {} }] });
+  // gaze fixed: the head stays put, so the camera does not swing or tilt.
+  cli('xr', 'run-sequence', {
+    device: 'hand-left',
+    gaze: 'fixed',
+    steps: [{ target, press: {} }],
+  });
+  levelHead();
 }
 
 function shot(label) {
   console.log(`\n[${stamp()}] SHOT: ${label}`);
+}
+
+/** Seated view, level. Hand moves can lean the body, so this is re-applied. */
+function levelHead() {
+  cli('xr', 'set-transform', {
+    device: 'headset',
+    position: HEAD_POSITION,
+    orientation: { x: 0, y: 0, z: 0, w: 1 },
+  });
+  cli('xr', 'look-at', { device: 'headset', target: HEAD_TARGET });
 }
 
 async function prep() {
@@ -68,13 +85,13 @@ async function prep() {
   cli('xr', 'set-input-mode', { mode: 'hand' });
   // Defaults: lower table, contrast off, music on.
   press('reset-settings');
-  cli('xr', 'set-transform', { device: 'headset', position: HEAD_POSITION });
-  cli('xr', 'look-at', { device: 'headset', target: HEAD_TARGET });
   // Park the left hand low and out of the way after the reset press.
   cli('xr', 'run-sequence', {
     device: 'hand-left',
+    gaze: 'fixed',
     steps: [{ anchor: 'wrist', position: { x: -0.35, y: 0.6, z: -0.1 }, duration: 0.6 }],
   });
+  levelHead();
 }
 
 async function main() {

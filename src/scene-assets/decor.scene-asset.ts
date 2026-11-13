@@ -340,8 +340,8 @@ const wood = createSceneMaterial({
         { frequency: [4, 90], amplitude: 0.3 },
       ],
       ramp: [
-        { at: 0, color: '#DCCBAF' },
-        { at: 1, color: '#ECDFC8' },
+        { at: 0, color: '#C6955C' },
+        { at: 1, color: '#DDB584' },
       ],
     },
   },
@@ -365,8 +365,8 @@ const sandClay = createSceneMaterial({
         { frequency: [28, 28], amplitude: 0.4 },
       ],
       ramp: [
-        { at: 0, color: '#C4AD8A' },
-        { at: 1, color: '#DCC8A8' },
+        { at: 0, color: '#D77F5E' },
+        { at: 1, color: '#E9A283' },
       ],
     },
     bump: {
@@ -394,7 +394,7 @@ const brass = createSceneMaterial({
 const porcelain = createSceneMaterial({
   id: 'decor-porcelain',
   model: 'physical',
-  baseColor: '#F4F2EE',
+  baseColor: '#B79AE0',
   roughness: 0.25,
   clearcoat: 0.5,
   clearcoatRoughness: 0.1,
@@ -405,10 +405,10 @@ const porcelain = createSceneMaterial({
 const linen = createSceneMaterial({
   id: 'decor-linen',
   model: 'standard',
-  baseColor: '#F3EEE6',
+  baseColor: '#F6DDB0',
   roughness: 0.95,
-  emissive: '#FFF4E2',
-  emissiveIntensity: 0.12,
+  emissive: '#FFC46B',
+  emissiveIntensity: 0.45,
   side: 'double',
 });
 
@@ -554,9 +554,9 @@ function book(size: [number, number, number], coverMaterial: Material): Group {
 function bookStack(): Group {
   const stack = new Group();
   const books: [[number, number, number], Material, number][] = [
-    [[0.27, 0.034, 0.2], cover('decor-cover-sand', '#D8CBB8'), 0.06],
-    [[0.25, 0.026, 0.18], cover('decor-cover-sage', '#BFC8BC'), -0.1],
-    [[0.23, 0.03, 0.17], cover('decor-cover-bone', '#E7E2D8'), 0.14],
+    [[0.27, 0.034, 0.2], cover('decor-cover-coral', '#E9805F'), 0.06],
+    [[0.25, 0.026, 0.18], cover('decor-cover-blue', '#5FA8E9'), -0.1],
+    [[0.23, 0.03, 0.17], cover('decor-cover-yellow', '#F2C14E'), 0.14],
   ];
   let y = 0;
   for (const [size, material, turn] of books) {
@@ -656,7 +656,7 @@ export function createGallerySet(): Group {
     next.rotation.y = side < 0 ? 0.3 : Math.PI - 0.3;
     set.add(next);
   }
-  const vase = floorVase(glaze('decor-glaze-rose', '#CDA893'));
+  const vase = floorVase(glaze('decor-glaze-teal', '#3FA9A3'));
   vase.name = 'vase';
   vase.position.set(-0.95, 0, -0.15);
   vase.scale.setScalar(1.25);
