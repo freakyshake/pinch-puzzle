@@ -114,6 +114,7 @@ export const BOARDS: BoardDef[] = [
       [Sphere, -0.1, -0.16],
     ],
     [0, 1, 2, 3],
+    'Too far to reach? Toss it toward its match.',
   ),
   board(
     'Crown',

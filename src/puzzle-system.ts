@@ -34,6 +34,24 @@ const RELEASE_GRACE = 0.18;
 const TRAIL_SAMPLES = 24;
 const TRAIL = 'trail';
 const TRAIL_HEAD = 'trailHead';
+/**
+ * Toss: a piece let go while it is still moving toward a free slot of its
+ * own shape flies the rest of the way. It lets a player with a short reach
+ * fill the far slots, and it is never required: a plain drop works as before.
+ * Speed is measured over the last TOSS_WINDOW seconds of the hold, along the
+ * table (meters per second); the slot must lie within TOSS_CONE of that
+ * direction (cosine) and within TOSS_RANGE meters.
+ */
+const TOSS_SPEED = 0.6;
+const TOSS_WINDOW = 0.12;
+const TOSS_CONE = Math.cos((28 * Math.PI) / 180);
+const TOSS_RANGE = 1;
+/** Height of the arc a tossed piece follows, and how fast it travels. */
+const TOSS_ARC = 0.1;
+const TOSS_RATE = 6;
+/** userData: distance a tossed piece started from its slot (0 = not tossed), and its start height. */
+const TOSS_FROM = 'tossFrom';
+const TOSS_Y = 'tossY';
 /** Glide speed for snap and return (higher is faster). */
 const GLIDE_RATE = 12;
 /** How fast the table glides to a new height or distance. */
@@ -259,6 +277,7 @@ export class PuzzleSystem extends createSystem({
       // x, y, z, time per sample; time -1 marks an empty sample.
       pieceVisual.root.userData[TRAIL] = new Float32Array(TRAIL_SAMPLES * 4).fill(-1);
       pieceVisual.root.userData[TRAIL_HEAD] = 0;
+      pieceVisual.root.userData[TOSS_FROM] = 0;
       pieceVisual.root.name = `piece-${def.shape}${suffix}`;
       const piece = this.world.createTransformEntity(pieceVisual.root);
       const hx = ox + def.tray[0];
@@ -334,6 +353,50 @@ export class PuzzleSystem extends createSystem({
     }
   }
 
+  /**
+   * The free slot of `shape` a piece released at piecePos was thrown toward,
+   * into foundSlot and foundDist, or nothing if it was not a toss.
+   */
+  private findToss(trail: Float32Array, shape: string): void {
+    // Newest sample, and the oldest one still inside the window.
+    let newest = -1;
+    let oldest = -1;
+    for (let i = 0; i < trail.length; i += 4) {
+      const t = trail[i + 3];
+      if (t < 0 || this.now - t > TOSS_WINDOW + 0.05) continue;
+      if (newest < 0 || t > trail[newest + 3]) newest = i;
+    }
+    if (newest < 0) return;
+    for (let i = 0; i < trail.length; i += 4) {
+      const t = trail[i + 3];
+      if (t < 0 || trail[newest + 3] - t > TOSS_WINDOW) continue;
+      if (oldest < 0 || t < trail[oldest + 3]) oldest = i;
+    }
+    const dt = trail[newest + 3] - trail[oldest + 3];
+    if (oldest < 0 || dt < 0.03) return;
+    const vx = (trail[newest] - trail[oldest]) / dt;
+    const vz = (trail[newest + 2] - trail[oldest + 2]) / dt;
+    const speed = Math.hypot(vx, vz);
+    if (speed < TOSS_SPEED) return;
+
+    let bestAim = TOSS_CONE;
+    for (const slot of this.queries.slots.entities) {
+      if (slot.getValue(Slot, 'shape') !== shape) continue;
+      if (slot.getValue(Slot, 'occupant') != null) continue;
+      const sp = slot.object3D!.position;
+      const dx = sp.x - this.piecePos.x;
+      const dz = sp.z - this.piecePos.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > TOSS_RANGE || dist < 0.001) continue;
+      const aim = (vx * dx + vz * dz) / (speed * dist);
+      if (aim > bestAim) {
+        bestAim = aim;
+        this.foundSlot = slot;
+        this.foundDist = dist;
+      }
+    }
+  }
+
   private onRelease(piece: Entity): void {
     const object = piece.object3D!;
     object.getWorldPosition(this.piecePos);
@@ -354,9 +417,16 @@ export class PuzzleSystem extends createSystem({
         this.findSlot(this.samplePos, shape);
       }
     }
+    let tossed = false;
+    if (!this.foundSlot) {
+      this.findToss(object.userData[TRAIL] as Float32Array, shape);
+      tossed = this.foundSlot != null;
+    }
     const best = this.foundSlot as Entity | null;
 
     const target = piece.getVectorView(Piece, 'target');
+    object.userData[TOSS_FROM] = tossed ? this.foundDist : 0;
+    object.userData[TOSS_Y] = this.piecePos.y;
     if (best) {
       best.setValue(Slot, 'occupant', piece);
       piece.setValue(Piece, 'slot', best);
@@ -506,9 +576,22 @@ export class PuzzleSystem extends createSystem({
       ) {
         const t = piece.getVectorView(Piece, 'target');
         const p = object.position;
-        p.x += (t[0] - p.x) * k;
-        p.y += (t[1] - p.y) * k;
-        p.z += (t[2] - p.z) * k;
+        const tossFrom = object.userData[TOSS_FROM] as number;
+        if (state === PieceStates.Snapping && tossFrom > 0) {
+          // A tossed piece flies in an arc: along the table at its own
+          // pace, with its height tied to how far it has come.
+          const kt = 1 - Math.exp(-TOSS_RATE * delta);
+          p.x += (t[0] - p.x) * kt;
+          p.z += (t[2] - p.z) * kt;
+          const left = Math.hypot(t[0] - p.x, t[2] - p.z);
+          const done = 1 - Math.min(1, left / tossFrom);
+          const startY = object.userData[TOSS_Y] as number;
+          p.y = startY + (t[1] - startY) * done + TOSS_ARC * Math.sin(Math.PI * done);
+        } else {
+          p.x += (t[0] - p.x) * k;
+          p.y += (t[1] - p.y) * k;
+          p.z += (t[2] - p.z) * k;
+        }
         object.quaternion.slerp(this.identity, k);
         const dx = t[0] - p.x;
         const dy = t[1] - p.y;
@@ -516,6 +599,7 @@ export class PuzzleSystem extends createSystem({
         if (dx * dx + dy * dy + dz * dz < 0.000004) {
           p.set(t[0], t[1], t[2]);
           object.quaternion.identity();
+          object.userData[TOSS_FROM] = 0;
           if (state === PieceStates.Snapping) {
             piece.setValue(Piece, 'state', PieceStates.Placed);
             piece.setValue(Piece, 'pulse', 1);
