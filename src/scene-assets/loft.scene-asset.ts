@@ -290,63 +290,50 @@ function duskTexture(): DataTexture {
 }
 
 /**
- * The view from the window: a sunset over layered hills and a lake. Sky from
- * deep indigo through rose to gold, the sun low with a wide glow, thin lit
- * cloud streaks, two hill ranges in purple haze, and the sun's path on the
- * water. Painted once; v = 0 is the top.
+ * The view from the window: a calm dusk after the sun has gone. Deep blue
+ * overhead fading to lavender, long violet-pink cloud bands catching the last
+ * light, a thin peach glow on the horizon, and dark low land below. Muted on
+ * purpose: it is ambience, not a light source. Painted once; v = 0 is the top.
+ * From the seat the window shows about u 0.36 to 0.62 and v 0.17 to 0.8.
  */
 function sunsetTexture(width = 512, height = 256): DataTexture {
-  const cloud = valueNoise(61, 12);
-  const cloudFine = valueNoise(67, 48);
-  const ridgeFar = valueNoise(71, 7);
-  const ridgeNear = valueNoise(73, 11);
-  const ripple = valueNoise(79, 64);
-  // From the seat the window shows about u 0.36 to 0.62 and v 0.17 to 0.8,
-  // so the sun and the hills sit inside that frame.
-  const sunU = 0.5;
-  const sunV = 0.47;
-  const horizon = 0.58;
+  const cloudBroad = valueNoise(61, 10);
+  const cloudFine = valueNoise(67, 40);
+  const ridge = valueNoise(71, 9);
+  const ridgeFine = valueNoise(73, 40);
+  const horizon = 0.6;
   const mix = (a: number[], b: number[], t: number) => a.map((x, i) => x + (b[i] - x) * Math.min(1, Math.max(0, t)));
+  const stops = [
+    [0, [30, 40, 82]],
+    [0.22, [58, 72, 128]],
+    [0.4, [104, 100, 156]],
+    [0.52, [168, 128, 160]],
+    [0.6, [214, 156, 140]],
+  ] as const;
   const sky = (v: number) => {
-    const stops = [[0, [34, 30, 78]], [0.2, [96, 54, 112]], [0.36, [206, 96, 112]], [0.48, [250, 152, 84]], [0.58, [255, 206, 128]]] as const;
     for (let i = 1; i < stops.length; i += 1) {
       if (v <= stops[i][0]) return mix([...stops[i - 1][1]], [...stops[i][1]], (v - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]));
     }
     return [...stops[stops.length - 1][1]];
   };
   const pixels = paintImage(width, height, (u, v) => {
-    const aspect = width / height;
-    const dx = (u - sunU) * aspect;
-    const glowDist = Math.hypot(dx, (v - sunV) * 1.4);
-    // Ridges: far hills sit on the horizon, near hills lower and darker.
-    const farTop = horizon - 0.035 - 0.07 * ridgeFar(u, 0.3);
-    const nearTop = horizon + 0.02 - 0.09 * ridgeNear(u, 0.6) + 0.12 * Math.max(0, u - 0.62);
-    if (v > nearTop && (u > 0.6 || u < 0.2 || v > horizon + 0.12)) {
-      const k = 1 - (v - nearTop) * 0.8;
-      return [52 * k, 34 * k, 62 * k];
-    }
-    if (v > horizon) {
-      // Water: a darker mirror of the sky with the sun's path in it.
-      const mirror = sky(horizon - (v - horizon) * 1.6);
-      const path = Math.exp(-Math.abs(dx) * 18) * (0.55 + 0.45 * ripple(u * 4, v * 2)) * (1 - (v - horizon) * 2);
-      const c = mix(mix(mirror, [70, 44, 90], 0.45), [255, 214, 150], path);
-      return [c[0], c[1], c[2]];
-    }
-    if (v > farTop) {
-      const haze = 1 - (v - farTop) / 0.12;
-      const c = mix([118, 72, 116], sky(v), 0.35 * haze);
+    // Low land: a soft ridge line, then flat dark ground with a faint haze.
+    const ridgeTop = horizon - 0.025 - 0.035 * ridge(u, 0.4) - 0.008 * ridgeFine(u, 0.7);
+    if (v > ridgeTop) {
+      const depth = Math.min(1, (v - ridgeTop) / 0.3);
+      const c = mix([58, 54, 84], [24, 26, 38], depth);
       return [c[0], c[1], c[2]];
     }
     let c = sky(v);
-    // Sun and its glow.
-    const disc = glowDist < 0.05 ? 1 : 0;
-    const glow = Math.exp(-glowDist * 5) * 0.7;
-    c = mix(c, [255, 236, 190], Math.max(disc, glow));
-    // Thin cloud streaks, lit from below by the sun.
-    const band = cloud(u * 1.5, v * 0.6) * 0.7 + cloudFine(u * 3, v * 1.2) * 0.3;
-    const streak = Math.max(0, band - 0.5) * 3.2 * Math.max(0, 1 - Math.abs(v - 0.32) * 3.5);
-    const lit = mix([150, 70, 110], [255, 170, 130], 1 - glowDist * 1.6);
-    c = mix(c, lit, Math.min(0.85, streak));
+    // Where the sun went down: a wide, faint warmth just above the land.
+    const warm = Math.exp(-Math.hypot((u - 0.48) * 2.2, (v - horizon) * 7)) * 0.35;
+    c = mix(c, [236, 176, 146], warm);
+    // Long thin cloud bands, stretched sideways, brightest near the horizon.
+    const band = 0.65 * cloudBroad(u * 0.8, v * 2.4) + 0.35 * cloudFine(u * 1.6, v * 5);
+    const height = Math.max(0, 1 - Math.abs(v - 0.4) * 3.6);
+    const amount = Math.min(0.85, Math.max(0, band - 0.44) * 4.2 * height);
+    const lit = mix([110, 92, 150], [226, 150, 168], (v - 0.22) / 0.32);
+    c = mix(c, lit, amount);
     return [c[0], c[1], c[2]];
   });
   return pixelTexture(width, height, pixels);
@@ -527,7 +514,7 @@ export function createLoftShell(): Group {
   }
 
   // Window: a black steel frame with a 3 x 3 grid of panes, a deep sill,
-  // and the evening light it throws across the floor.
+  // and the faint dusk light it lets onto the floor.
   const winMid = (DL + DR) / 2;
   const winW = DR - DL;
   const winH = DT - S;
@@ -543,7 +530,7 @@ export function createLoftShell(): Group {
     room.add(box([bar, winH, bar], frameBlack, DL + (winW * i) / 3, winY, B));
     room.add(box([winW, bar, bar], frameBlack, winMid, S + (winH * i) / 3, B));
   }
-  const sunlight = plane(winW * 1.25, 3.4, pool('#FF9A55', 0.32), winMid + 0.3, 0.007, B + 2.2);
+  const sunlight = plane(winW * 1.25, 3.4, pool('#B892B8', 0.12), winMid + 0.3, 0.007, B + 2.2);
   sunlight.rotation.x = -Math.PI / 2;
   sunlight.rotation.z = -0.25;
   room.add(sunlight);
