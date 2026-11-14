@@ -9,9 +9,17 @@ import {
   resetSettings,
   updateSettings,
 } from './settings.js';
+import { canStartVR } from './vr-support.js';
 
-/** Scene node ID of the comfort panel beside the table. */
+/** Scene node ID of the comfort panel, beside the progress panel. */
 const PANEL_NODE = 'settings-panel';
+
+/** Line under Fit to me: the resting text, and the two answers to a press. */
+const FIT_NOTE = 'Or pinch and hold in the air for 3 seconds';
+const FIT_NOTE_STARTED = 'Sit how you like and hold still: fitting now';
+const FIT_NOTE_FLAT = 'Fit to me works in VR: press Enter XR first';
+const FIT_NOTE_NO_HEADSET = 'Fit to me works in VR, on a headset';
+const FIT_NOTE_SECONDS = 4;
 
 /** Toggle look: green when on, slate when off. The label always says which. */
 const TOGGLE_ON = {
@@ -27,8 +35,8 @@ const TOGGLE_OFF = {
 
 /**
  * Wires the comfort panel: table height and distance, high contrast, music,
- * restart board and reset. Buttons respond to a fingertip poke or a pinch
- * from a distance.
+ * restart board and reset. The panel is about a metre away: point at a
+ * button and pinch.
  */
 export class SettingsPanelSystem extends createSystem({}) {
   init(): void {
@@ -60,7 +68,24 @@ export class SettingsPanelSystem extends createSystem({}) {
     );
     bind('music-toggle', () => updateSettings({ music: !getSettings().music }));
     bind('reset-settings', () => resetSettings());
-    bind('fit-to-me', () => this.world.getSystem(PostureSystem)?.requestFit());
+    // The button always answers: what it is about to do in VR, or that it
+    // needs VR on the flat page. Silence here reads as a broken button.
+    const fitNote = panel.getElementById<UIKit.Text>('fit-note');
+    let noteTimer = 0;
+    let flatNote = FIT_NOTE_FLAT;
+    void canStartVR().then((supported) => {
+      if (!supported) flatNote = FIT_NOTE_NO_HEADSET;
+    });
+    bind('fit-to-me', () => {
+      const started = this.world.getSystem(PostureSystem)?.requestFit() === true;
+      fitNote?.setProperties({ text: started ? FIT_NOTE_STARTED : flatNote });
+      window.clearTimeout(noteTimer);
+      noteTimer = window.setTimeout(
+        () => fitNote?.setProperties({ text: FIT_NOTE }),
+        FIT_NOTE_SECONDS * 1000,
+      );
+    });
+    this.cleanupFuncs.push(() => window.clearTimeout(noteTimer));
     bind('restart-board', () => this.world.getSystem(PuzzleSystem)?.restartBoard());
 
     const contrastLabel = panel.getElementById<UIKit.Text>('contrast-label');

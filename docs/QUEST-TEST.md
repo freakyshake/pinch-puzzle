@@ -29,7 +29,8 @@ It looks like `https://192.168.x.x:8081/`. Then:
 4. You will see a certificate warning, because the dev server signs its own
    certificate. Choose **Advanced**, then **Proceed**. This is expected on a
    local network.
-5. Press **Enter XR** on the panel (point and pinch, or poke it). Allow hand
+5. Press the large **Play in VR** button at the bottom of the page (or **Enter
+   XR** on the panel in the scene). Allow hand
    tracking if the Quest asks.
 
 If the page never loads: check that both devices are on the same network
@@ -48,7 +49,7 @@ certificate step.
 | 3 | Drop a piece on a wrong ring | Soft low "bonk", the ring dims, the piece floats back to the tray | |
 | 4 | While holding a piece, look at the rings | The matching ring pulses brighter | |
 | 5 | Finish board 1 | Chime, green "Solved!" panel, board 2 appears after about 3 s | |
-| 6 | Comfort panel (left): poke Lower / Higher, Closer / Farther | Table, pieces and panel move in 4 to 5 cm steps | |
+| 6 | Comfort panel (left of the progress panel): point and pinch Lower / Higher, Closer / Farther | Table, pieces and panel move in 4 to 5 cm steps | |
 | 7 | Comfort panel: High contrast On | Dark mat, black outlines on pieces, brighter rings | |
 | 8 | Comfort panel: Music Off / On | Ambient music stops and starts | |
 | 9 | Play all six boards | Board 6 shows "All solved!" and a Play again button | |

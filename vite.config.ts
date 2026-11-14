@@ -6,10 +6,37 @@
  */
 
 import { iwsdkDev } from '@iwsdk/vite-plugin-dev';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+
+/**
+ * The game script (index.ts -> app.js) and two chunks it pulls in at run time
+ * (the world initializer and the font data) are loaded one after another:
+ * each is only discovered after the previous one has been parsed. Listing
+ * them in index.html as module preloads lets the browser fetch all of them
+ * at once from the first byte, which shortens the load by the waterfall.
+ * Build only; the dev server serves unbundled modules.
+ */
+function preloadGameChunks(): Plugin {
+  const wanted = /^assets\/(app|world-initializer|inter)-[\w-]+\.js$/;
+  return {
+    name: 'preload-game-chunks',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        const names = Object.keys(ctx.bundle ?? {}).filter((name) => wanted.test(name));
+        return names.map((name) => ({
+          tag: 'link',
+          attrs: { rel: 'modulepreload', crossorigin: '', href: `./${name}` },
+          injectTo: 'head',
+        }));
+      },
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [iwsdkDev()],
+  plugins: [iwsdkDev(), preloadGameChunks()],
   server: { host: '0.0.0.0', port: 8081, open: false },
   build: {
     outDir: 'dist',

@@ -145,9 +145,14 @@ export class PostureSystem extends createSystem({
     );
   }
 
-  /** Fit to me button: fits after a short pause to look at the table spot. */
-  requestFit(): void {
-    if (this.immersive) this.countdown = BUTTON_DELAY;
+  /**
+   * Fit to me button: fits after a short pause to look at the table spot.
+   * Returns false on the flat page, where there is no head to fit to.
+   */
+  requestFit(): boolean {
+    if (!this.immersive) return false;
+    this.countdown = BUTTON_DELAY;
+    return true;
   }
 
   private enter(): void {

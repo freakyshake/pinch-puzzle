@@ -1,7 +1,8 @@
 <!--
-  Comfort and accessibility settings, beside the table. SettingsPanelSystem
-  wires the button IDs; values persist in localStorage. Poke a button with a
-  fingertip, or point and pinch from a distance.
+  Comfort and accessibility settings. The panel stands beside the progress
+  panel at the back of the table, so it is in view the moment VR starts.
+  SettingsPanelSystem wires the button IDs; values persist in localStorage.
+  It is about a metre away: point at a button and pinch.
   Each row has an icon chip in one of the piece colors. The two toggles are
   tinted by SettingsPanelSystem (green when on) and always say On or Off.
   Fit to me asks PostureSystem to fit the game to the player's head: table
@@ -156,7 +157,7 @@
         </ButtonIcon>
         <ButtonLabel>Fit to me</ButtonLabel>
       </Button>
-      <span class="note">Or pinch and hold in the air for 3 seconds</span>
+      <span id="fit-note" class="note">Or pinch and hold in the air for 3 seconds</span>
     </div>
     <div class="row">
       <div class="name">

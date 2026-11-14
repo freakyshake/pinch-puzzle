@@ -87,6 +87,63 @@
           opacity: 0.4;
         }
       }
+      /* Start bar on the flat page: one large button into VR. The same button
+         exists on the panel in the scene, but that one is small on a flat
+         screen. Clicks pass through everything except the button itself. */
+      #start {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 18px;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        pointer-events: none;
+        font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+      }
+      #start[hidden] {
+        display: none;
+      }
+      #start p {
+        margin: 0;
+        padding: 6px 14px;
+        border-radius: 14px;
+        font-size: 16px;
+        line-height: 1.35;
+        text-align: center;
+        color: #fafaf7;
+        background: rgba(28, 29, 32, 0.82);
+      }
+      #enter-vr {
+        pointer-events: auto;
+        min-width: 240px;
+        min-height: 60px;
+        padding: 0 36px;
+        border: 3px solid #1c1d20;
+        border-radius: 32px;
+        font: inherit;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1c1d20;
+        background: #f5d90a;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+      }
+      #enter-vr:hover {
+        background: #ffe95c;
+      }
+      #enter-vr:focus-visible {
+        outline: 4px solid #fafaf7;
+        outline-offset: 3px;
+      }
+      #enter-vr.no-headset {
+        color: #fafaf7;
+        background: #565a66;
+        cursor: default;
+      }
     </style>
   </head>
   <body>
@@ -106,6 +163,10 @@
       </p>
     </noscript>
     <div id="scene-container"></div>
+    <div id="start" hidden>
+      <p id="start-note">Seated, hands only. Pinch a shape and drop it on its match.</p>
+      <button id="enter-vr" type="button">Play in VR</button>
+    </div>
     <script type="module" src="/src/index.ts"></script>
   </body>
 </html>

@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { createSystem, UIKitMLAsset, VisibilityState } from '@iwsdk/core';
+import { createSystem, UIKit, UIKitMLAsset, VisibilityState } from '@iwsdk/core';
+import { canStartVR } from './vr-support.js';
+
+/** Enter XR button text where the browser has no headset to enter VR on. */
+const NO_HEADSET_LABEL = 'VR needs a headset';
 
 export class PanelSystem extends createSystem({}) {
   init(): void {
@@ -20,6 +24,13 @@ export class PanelSystem extends createSystem({}) {
       exitButton.setProperties({ display: 'none' });
       return;
     }
+
+    // A desktop or phone browser has no headset: say so on the button, which
+    // otherwise does nothing when pressed and reads as broken.
+    const xrLabel = panel?.getElementById<UIKit.Text>('xr-label');
+    void canStartVR().then((supported) => {
+      if (!supported) xrLabel?.setProperties({ text: NO_HEADSET_LABEL });
+    });
 
     const launchXR = () => this.world.launchXR();
     const exitXR = () => this.world.exitXR();
