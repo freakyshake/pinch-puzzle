@@ -60,9 +60,9 @@ type Hand = 'left' | 'right';
  * Nothing in the puzzle moves: only the player rig does (world.player, the
  * same object locomotion would move), so all game logic is untouched.
  *
- * Triggers: automatically when VR starts (full fit only when reclined, the
- * height alone when upright), a pinch held in empty air for three seconds
- * with either hand, or the Fit to me button.
+ * Triggers: automatically when VR starts (the height alone, upright players
+ * only; the reclined turn is never automatic), a pinch held in empty air for
+ * three seconds with either hand, or the Fit to me button.
  */
 export class PostureSystem extends createSystem({
   held: { required: [Piece, Grabbed] },
@@ -249,8 +249,10 @@ export class PostureSystem extends createSystem({
       this.sinceEnter += delta;
       if (this.sinceEnter >= AUTO_DELAY && head.position.y > 0.2) {
         this.autoDone = true;
-        if (this.readPosture()) this.fit();
-        else if (!getSettings().heightSet) this.fitHeight(head.position.y);
+        // Automatic: height only, and only for an upright player. A reclined
+        // pose is never guessed at here; the player asks for it (button or
+        // pinch-hold), because a wrong turn at VR start costs more than it saves.
+        if (!this.readPosture() && !getSettings().heightSet) this.fitHeight(head.position.y);
       }
     } else if (this.refitHeight) {
       if (!this.reclined) this.fitHeight(head.position.y);
